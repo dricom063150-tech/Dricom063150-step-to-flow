@@ -1,0 +1,12 @@
+{
+  "name": "step-to-flowmaster",
+  "version": "1.0.0",
+  "description": "Outil HTML autonome : maquette STEP → dossier de données d'entrée Simcenter Flowmaster (Excel)",
+  "private": true,
+  "scripts": {
+    "build": "python3 build.py",
+    "test": "node --test tests/engine.test.js",
+    "test:e2e": "python3 tests/e2e.py tests/fixtures/ref2_circuit_coudes_te.stp tests/out/t2"
+  },
+  "engines": { "node": ">=18" }
+}

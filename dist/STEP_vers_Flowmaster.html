@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STEP → Données d'entrée Flowmaster</title>
+<style>
+/* ===== Styles : outil d'ingénierie sobre, lisible, dense ===== */
+:root{--ink:#1d2733;--mut:#66707c;--line:#d9dee4;--bg:#f4f6f8;--pan:#fff;--acc:#1f4e78;--acc2:#2f7fc1;--ok:#1e8449;--bad:#c0392b;--warn:#b9770e}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);display:flex;flex-direction:column}
+body.drag::after{content:"Déposez le fichier STEP";position:fixed;inset:10px;border:3px dashed var(--acc2);border-radius:12px;background:rgba(47,127,193,.08);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--acc);z-index:9}
+header{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--acc);color:#fff;flex-wrap:wrap}
+header h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.2px}header h1 small{font-weight:400;opacity:.75;margin-left:6px}
+button{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:5px;padding:5px 11px;cursor:pointer}
+button:hover{border-color:var(--acc2)}button:disabled{opacity:.45;cursor:not-allowed}
+header button{border-color:rgba(255,255,255,.4)}header button.pri{background:#f1c40f;border-color:#f1c40f;font-weight:600}
+.status{flex:1;min-width:200px;font-size:12px;opacity:.95}.status.err{color:#ffd1cc;font-weight:600}.status.ok{color:#d5f5e3}.status.warn{color:#fdebd0}
+#prog{display:none;width:220px}#prog .b{height:6px;background:rgba(255,255,255,.25);border-radius:3px;overflow:hidden}#progBar{height:100%;width:0;background:#f1c40f;transition:width .2s}#progTxt{font-size:11px;opacity:.8}
+main{flex:1;display:grid;grid-template-columns:minmax(420px,56%) 1fr;min-height:0}
+.left{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--pan)}
+.tabs{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line);background:#fafbfc}
+.tab{padding:8px 8px;font-size:12.5px;cursor:pointer;border-bottom:2px solid transparent;color:var(--mut);font-weight:500;user-select:none}.tab.on{color:var(--acc);border-bottom-color:var(--acc)}.tab:hover{color:var(--ink)}
+#panel{flex:1;overflow:auto;padding:10px 14px 30px}
+.right{display:grid;grid-template-rows:1fr minmax(180px,40%);min-height:0}
+.vwrap{position:relative;background:linear-gradient(#fdfdfe,#eef2f6);min-height:0}#view{width:100%;height:100%;display:block;cursor:grab}
+.vtools{position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;font-size:11.5px}.vtools button{padding:3px 8px;font-size:11.5px}.vtools label{background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 7px}
+.legend{position:absolute;right:8px;bottom:8px;opacity:.92;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:11px;line-height:1.7}
+.legend summary{cursor:pointer;font-weight:600;color:var(--acc)}.legend i{display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+#insp{overflow:auto;padding:8px 12px;background:var(--pan);border-top:1px solid var(--line)}#insp h4{margin:4px 0 2px;font-size:14px}
+h3{font-size:13.5px;margin:16px 0 6px;color:var(--acc)}h3:first-child{margin-top:4px}
+table.grid{border-collapse:collapse;width:100%;font-size:12px}table.grid th{position:sticky;top:-10px;background:#eef2f6;text-align:left;font-weight:600;padding:5px 6px;border-bottom:1px solid var(--line)}
+table.grid td{padding:4px 6px;border-bottom:1px solid #eef0f2;vertical-align:top}table.grid tr[data-id],table.grid tr[data-nsel]{cursor:pointer}table.grid tr:hover td{background:#f5f9fd}table.grid tr.sel td{background:#fff7d6}
+table.ref td.c{text-align:center;font-weight:600}td.bB{background:#ffc7ce}td.bP{background:#ffeb9c}
+table.kv{border-collapse:collapse;font-size:12px;width:100%}table.kv td{padding:3px 6px;border-bottom:1px solid #f0f1f3}table.kv td:first-child{color:var(--mut);width:46%}
+.o{display:inline-block;font-size:10px;padding:0 5px;border-radius:8px;border:1px solid rgba(0,0,0,.12);vertical-align:1px;cursor:help;white-space:nowrap}
+.o-STEP{background:#c6efce}.o-CALC{background:#ddebf7}.o-DEF{background:#ffeb9c}.o-USER{background:#e4dfec}.o-TODO{background:#ffc7ce;font-weight:600}.o-NA{background:#ededed;color:#888}.o-INFO{background:#eee}
+.todo{color:var(--bad);font-weight:600;font-size:11px}.bad{color:var(--bad);font-weight:600}.good{color:var(--ok)}.warn{color:var(--warn);font-weight:600}
+.sm{font-size:11px;color:var(--mut)}.hint{color:var(--mut);font-style:italic}
+.form{display:flex;flex-wrap:wrap;gap:8px 16px;margin:4px 0}.form label{display:flex;flex-direction:column;font-size:11.5px;color:var(--mut);gap:2px}.form label.chk{flex-direction:row;align-items:center;gap:5px;color:var(--ink);font-size:12.5px}.form label.wide{flex-basis:100%}
+input,select,textarea{font:inherit;font-size:12px;border:1px solid #c9d0d8;border-radius:4px;padding:3px 5px;background:#fff;color:var(--ink)}textarea{width:100%;font-family:ui-monospace,Consolas,monospace;font-size:11.5px}
+input:focus,select:focus,textarea:focus{outline:2px solid #bcd7f0;border-color:var(--acc2)}
+.bar{margin:8px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.kpis{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}.kpis div{background:#f2f5f8;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--mut);min-width:92px}.kpis b{display:block;font-size:18px;color:var(--ink)}.kpis .kbad b{color:var(--bad)}.kpis .kgood b{color:var(--ok)}
+ul.alerts{list-style:none;padding:0;margin:0}ul.alerts li{padding:4px 8px;border-left:3px solid #ccc;margin:3px 0;background:#fafbfc;font-size:12px}ul.alerts li b{margin-right:6px}
+.a-err{border-color:var(--bad)!important;background:#fdf0ef!important}.a-warn{border-color:#f0b429!important;background:#fffaf0!important}.a-info{border-color:#9bb8d3!important}
+.card{border:1px solid var(--line);border-radius:7px;margin:8px 0;padding:6px 10px;background:#fcfdfe}.card-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+ol.help,ul.help{padding-left:20px;margin:4px 0}ol.help li,ul.help li{margin:3px 0}
+details summary{cursor:pointer;color:var(--acc);margin:6px 0}
+@media (max-width:900px){main{grid-template-columns:1fr;grid-template-rows:auto 520px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>STEP → Données d'entrée Flowmaster<small>100 % local · aucun envoi réseau</small></h1>
+  <button id="btnOpen">Ouvrir un STEP…</button><input type="file" id="file" accept=".stp,.step,.p21,.STP,.STEP" hidden>
+  <div id="prog"><div class="b"><div id="progBar"></div></div><div id="progTxt"></div></div>
+  <div id="status" class="status">Ouvrez ou glissez-déposez un fichier STEP (AP203, AP214, AP242).</div>
+  <button id="btnExport" class="pri" disabled>Exporter l'Excel</button>
+</header>
+<main>
+  <section class="left">
+    <nav class="tabs">
+      <div class="tab on" data-t="set">Réglages &amp; synthèse</div><div class="tab" data-t="comp">Composants</div><div class="tab" data-t="nodes">Nœuds &amp; CL</div><div class="tab" data-t="eq">Équipements</div><div class="tab" data-t="data">Données de calcul</div><div class="tab" data-t="bodies">Corps CAO</div><div class="tab" data-t="ref">Référentiel</div><div class="tab" data-t="help">Aide &amp; limites</div>
+    </nav>
+    <div id="panel"></div>
+  </section>
+  <section class="right">
+    <div class="vwrap"><canvas id="view"></canvas>
+      <div class="vtools"><button data-view="iso">Iso</button><button data-view="top">Dessus</button><button data-view="front">Face</button><button data-view="side">Côté</button><button id="btnFit">Cadrer</button><label><input type="checkbox" id="chkLbl" checked> étiquettes</label><label><input type="checkbox" id="chkTodo" checked> à compléter</label></div>
+      <details class="legend"><summary>Légende</summary><div><i style="background:#2f7fc1"></i>Tube (pointillé : De seul)</div><div><i style="background:#e08a1e"></i>Coude</div><div><i style="background:#16a085"></i>Variation de section</div><div><i style="background:#8e44ad"></i>Té ◆</div><div><i style="background:#c0392b"></i>Équipement</div><div><i style="background:rgba(231,76,60,.4);height:8px"></i>Données bloquantes</div><div>□ extrémité libre (verte : CL saisie)</div><div class="sm">Glisser : rotation · Maj/droit : déplacer · Molette : zoom</div></details>
+    </div>
+    <div id="insp"></div>
+  </section>
+</main>
+<!-- ===== Moteur d'analyse STEP (également exécuté dans le Web Worker) ===== -->
+<script id="core-src">
+/* =====================================================================
+   MOTEUR D'ANALYSE STEP → RÉSEAU FLUIDIQUE
+   Exécuté dans un Web Worker (ou dans le fil principal en repli).
+   Aucune dépendance, aucun appel réseau.
+   Sections :
+     1. Outils vectoriels / matrices
+     2. Analyseur ISO 10303-21 (section DATA, lecture paresseuse)
+     3. Unités (LENGTH_UNIT, PLANE_ANGLE_UNIT) par contexte de représentation
+     4. Arbre produit, assemblage, transformations → corps instanciés
+     5. Extraction des faces analytiques (cylindre, tore, cône…)
+     6. Reconnaissance des primitives (tube, coude, réduction)
+     7. Jonctions (tés, onglets), nœuds, équipements, composants de longueur nulle
+     8. Numérotation stable, topologie (boucles, sous-réseaux), alertes
+   ===================================================================== */
+'use strict';
+
+/* ---------- 1. Outils vectoriels ---------- */
+const V = {
+  add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+  sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+  mul: (a, s) => [a[0] * s, a[1] * s, a[2] * s],
+  dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  len: (a) => Math.hypot(a[0], a[1], a[2]),
+  dist: (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]),
+  norm: (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+  perp: (d) => { const t = Math.abs(d[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0]; return V.norm(V.cross(d, t)); },
+  angle: (a, b) => { const c = V.dot(V.norm(a), V.norm(b)); return Math.acos(Math.max(-1, Math.min(1, c))); }
+};
+const DEG = 180 / Math.PI;
+// Matrice rigide 3x4 : {r:[9] (lignes), t:[3]}
+const M = {
+  id: () => ({ r: [1, 0, 0, 0, 1, 0, 0, 0, 1], t: [0, 0, 0] }),
+  fromFrame: (f) => ({ r: [f.x[0], f.y[0], f.z[0], f.x[1], f.y[1], f.z[1], f.x[2], f.y[2], f.z[2]], t: f.o.slice() }),
+  ap: (m, p) => [m.r[0] * p[0] + m.r[1] * p[1] + m.r[2] * p[2] + m.t[0], m.r[3] * p[0] + m.r[4] * p[1] + m.r[5] * p[2] + m.t[1], m.r[6] * p[0] + m.r[7] * p[1] + m.r[8] * p[2] + m.t[2]],
+  apd: (m, p) => [m.r[0] * p[0] + m.r[1] * p[1] + m.r[2] * p[2], m.r[3] * p[0] + m.r[4] * p[1] + m.r[5] * p[2], m.r[6] * p[0] + m.r[7] * p[1] + m.r[8] * p[2]],
+  mul: (a, b) => {
+    const r = new Array(9);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) r[i * 3 + j] = a.r[i * 3] * b.r[j] + a.r[i * 3 + 1] * b.r[3 + j] + a.r[i * 3 + 2] * b.r[6 + j];
+    return { r, t: M.ap(a, b.t) };
+  },
+  inv: (m) => { // rigide : R^T, -R^T t
+    const r = [m.r[0], m.r[3], m.r[6], m.r[1], m.r[4], m.r[7], m.r[2], m.r[5], m.r[8]];
+    const t = [-(r[0] * m.t[0] + r[1] * m.t[1] + r[2] * m.t[2]), -(r[3] * m.t[0] + r[4] * m.t[1] + r[5] * m.t[2]), -(r[6] * m.t[0] + r[7] * m.t[1] + r[8] * m.t[2])];
+    return { r, t };
+  },
+  isId: (m) => m.r.every((v, i) => Math.abs(v - [1, 0, 0, 0, 1, 0, 0, 0, 1][i]) < 1e-12) && m.t.every(v => Math.abs(v) < 1e-12)
+};
+
+/* ---------- 2. Analyseur STEP (ISO 10303-21) ---------- */
+const STAR = { star: true };
+function decodeStepString(s) {
+  return s.replace(/''/g, "'")
+    .replace(/\\X2\\([0-9A-F]+)\\X0\\/gi, (m, h) => { let r = ''; for (let i = 0; i + 3 < h.length; i += 4) r += String.fromCharCode(parseInt(h.substr(i, 4), 16)); return r; })
+    .replace(/\\X4\\([0-9A-F]+)\\X0\\/gi, (m, h) => { let r = ''; for (let i = 0; i + 7 < h.length; i += 8) r += String.fromCodePoint(parseInt(h.substr(i, 8), 16)); return r; })
+    .replace(/\\X\\([0-9A-F]{2})/gi, (m, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/\\S\\(.)/g, (m, c) => String.fromCharCode(c.charCodeAt(0) + 128))
+    .replace(/\\P.\\/g, '').replace(/\\\\/g, '\\');
+}
+// Analyse le membre droit d'une instance : "NOM(args)" ou "(A(..) B(..))"
+function parseRHS(s) {
+  let p = 0; const n = s.length;
+  const ws = () => { while (p < n) { const c = s.charCodeAt(p); if (c <= 32) p++; else if (c === 47 && s.charCodeAt(p + 1) === 42) { const e = s.indexOf('*/', p + 2); p = e < 0 ? n : e + 2; } else break; } };
+  const kw = () => { const st = p; while (p < n) { const c = s.charCodeAt(p); if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c >= 48 && c <= 57) || c === 95 || c === 45) p++; else break; } return s.slice(st, p).toUpperCase(); };
+  function val() {
+    ws(); const c = s.charCodeAt(p);
+    if (c === 35) { p++; let id = 0, d; while ((d = s.charCodeAt(p)) >= 48 && d <= 57) { id = id * 10 + d - 48; p++; } return { r: id }; }
+    if (c === 39) { let st = ++p, out = ''; while (p < n) { if (s.charCodeAt(p) === 39) { if (s.charCodeAt(p + 1) === 39) { p += 2; continue; } break; } p++; } out = s.slice(st, p); p++; return decodeStepString(out); }
+    if (c === 40) return list();
+    if (c === 46) { const e = s.indexOf('.', p + 1); const v = s.slice(p + 1, e).toUpperCase(); p = e + 1; return { en: v }; }
+    if (c === 36) { p++; return null; }
+    if (c === 42) { p++; return STAR; }
+    if (c === 34) { const e = s.indexOf('"', p + 1); const v = s.slice(p + 1, e); p = e + 1; return { bin: v }; }
+    if (c === 45 || c === 43 || (c >= 48 && c <= 57)) { const st = p; p++; while (p < n) { const d = s.charCodeAt(p); if ((d >= 48 && d <= 57) || d === 46 || d === 69 || d === 101 || d === 45 || d === 43) p++; else break; } return parseFloat(s.slice(st, p)); }
+    const k = kw(); ws(); if (s.charCodeAt(p) === 40) return { tp: k, a: list() };
+    throw new Error('Syntaxe STEP inattendue près de « ' + s.slice(Math.max(0, p - 20), p + 20) + ' »');
+  }
+  function list() {
+    p++; const arr = []; ws(); if (s.charCodeAt(p) === 41) { p++; return arr; }
+    for (;;) { arr.push(val()); ws(); const c = s.charCodeAt(p); if (c === 44) { p++; continue; } if (c === 41) { p++; break; } throw new Error('Liste STEP mal formée près de « ' + s.slice(Math.max(0, p - 20), p + 20) + ' »'); }
+    return arr;
+  }
+  ws();
+  if (s.charCodeAt(p) === 40) { p++; const parts = []; ws(); while (p < n && s.charCodeAt(p) !== 41) { const k = kw(); ws(); parts.push({ t: k, a: list() }); ws(); } return { t: '*COMPLEX', parts }; }
+  const k = kw(); ws(); return { t: k, a: list() };
+}
+
+function parseStep(text, progress) {
+  const head = text.slice(0, Math.min(text.length, 60000));
+  if (!/ISO-10303-21/i.test(head)) throw new Error("Ce fichier n'est pas un fichier STEP (en-tête ISO-10303-21 absent).");
+  const header = {
+    schema: ((/FILE_SCHEMA\s*\(\s*\(\s*'([^']*)'/i.exec(head) || [])[1] || 'inconnu'),
+    fileName: ((/FILE_NAME\s*\(\s*'([^']*)'/i.exec(head) || [])[1] || ''),
+    system: ((/FILE_NAME\s*\([^;]*?'[^']*'\s*,\s*'[^']*'\s*,\s*\([^)]*\)\s*,\s*\([^)]*\)\s*,\s*'([^']*)'/i.exec(head) || [])[1] || '')
+  };
+  const ds = /\bDATA\b[^;]*;/i.exec(text);
+  if (!ds) throw new Error('Section DATA introuvable.');
+  let i = ds.index + ds[0].length; const n = text.length;
+  const raw = new Map(), byType = new Map(); let last = i;
+  const idx = (t, id) => { let a = byType.get(t); if (!a) byType.set(t, a = []); a.push(id); };
+  while (i < n) {
+    let c = text.charCodeAt(i);
+    if (c === 35) {
+      let j = i + 1, id = 0;
+      while ((c = text.charCodeAt(j)) >= 48 && c <= 57) { id = id * 10 + c - 48; j++; }
+      while (j < n && text.charCodeAt(j) <= 32) j++;
+      if (text.charCodeAt(j) !== 61) { i = j; continue; }
+      j++; let k = j, inStr = false;
+      for (; k < n; k++) {
+        c = text.charCodeAt(k);
+        if (inStr) { if (c === 39) { if (text.charCodeAt(k + 1) === 39) k++; else inStr = false; } }
+        else if (c === 39) inStr = true; else if (c === 59) break;
+        else if (c === 47 && text.charCodeAt(k + 1) === 42) { const e = text.indexOf('*/', k + 2); k = e < 0 ? n : e + 1; }
+      }
+      const body = text.slice(j, k);
+      let p = 0; while (p < body.length && body.charCodeAt(p) <= 32) p++;
+      if (body.charCodeAt(p) === 40) {
+        const e = parseRHS(body); e.complex = true; raw.set(id, e);
+        for (const pt of e.parts) idx(pt.t, id);
+      } else {
+        let q = p; while (q < body.length) { const cc = body.charCodeAt(q); if (cc === 40 || cc <= 32) break; q++; }
+        const t = body.slice(p, q).toUpperCase();
+        raw.set(id, { t, s: body, a: undefined }); idx(t, id);
+      }
+      i = k + 1;
+      if (progress && i - last > 1500000) { last = i; progress(i / n); }
+    } else if (c === 47 && text.charCodeAt(i + 1) === 42) { const e = text.indexOf('*/', i + 2); i = e < 0 ? n : e + 2; }
+    else if (c === 69 && text.startsWith('ENDSEC', i)) break;
+    else i++;
+  }
+  const db = {
+    header, raw, byType,
+    get(id) {
+      const e = raw.get(id); if (!e) return null;
+      if (e.a === undefined && !e.complex) { const r = parseRHS(e.s); e.a = r.a; e.s = null; }
+      return e;
+    },
+    ref(v) { return v && v.r !== undefined ? this.get(v.r) : null; },
+    part(e, t) { if (!e) return null; if (!e.complex) return e.t === t ? e.a : null; const p = e.parts.find(x => x.t === t); return p ? p.a : null; },
+    has(e, t) { return !!e && (e.complex ? e.parts.some(x => x.t === t) : e.t === t); },
+    ids(t) { return byType.get(t) || []; },
+    typeName(id) { const e = raw.get(id); return e ? (e.complex ? '(' + e.parts.map(x => x.t).join(' ') + ')' : e.t) : '?'; }
+  };
+  return db;
+}
+
+/* ---------- 3. Unités ---------- */
+const SI_PREFIX = { EXA: 1e18, PETA: 1e15, TERA: 1e12, GIGA: 1e9, MEGA: 1e6, KILO: 1e3, HECTO: 1e2, DECA: 10, DECI: 0.1, CENTI: 0.01, MILLI: 1e-3, MICRO: 1e-6, NANO: 1e-9, PICO: 1e-12 };
+function unitInfo(db, ref, depth = 0) {
+  const u = db.ref(ref); if (!u || depth > 5) return null;
+  const kind = db.has(u, 'LENGTH_UNIT') ? 'len' : db.has(u, 'PLANE_ANGLE_UNIT') ? 'ang' : db.has(u, 'SOLID_ANGLE_UNIT') ? 'solid' : 'autre';
+  const si = db.part(u, 'SI_UNIT');
+  if (si) {
+    const pf = si[0] && si[0].en ? (SI_PREFIX[si[0].en] || 1) : 1; const nm = si[1] && si[1].en;
+    if (nm === 'METRE') return { kind, scale: 1000 * pf, label: (si[0] && si[0].en ? si[0].en + ' ' : '') + 'METRE' };
+    if (nm === 'RADIAN') return { kind, scale: pf, label: 'RADIAN' };
+    return { kind, scale: null, label: nm || '?' };
+  }
+  const cb = db.part(u, 'CONVERSION_BASED_UNIT');
+  if (cb) {
+    const m = db.ref(cb[1]); if (!m) return { kind, scale: null, label: cb[0] };
+    const a = m.complex ? (db.part(m, 'MEASURE_WITH_UNIT') || []) : m.a;
+    const vc = a[0]; const val = typeof vc === 'number' ? vc : (vc && vc.a ? vc.a[0] : null);
+    const base = unitInfo(db, a[1], depth + 1);
+    return { kind, scale: (val != null && base && base.scale != null) ? val * base.scale : null, label: cb[0] };
+  }
+  return { kind, scale: null, label: '?' };
+}
+function contextUnits(db, ctxRef, cache) {
+  const key = ctxRef && ctxRef.r; if (cache.has(key)) return cache.get(key);
+  const res = { len: null, ang: null, lenLabel: null, angLabel: null };
+  const c = db.ref(ctxRef);
+  const g = c && db.part(c, 'GLOBAL_UNIT_ASSIGNED_CONTEXT');
+  if (g) for (const ur of g[0] || []) {
+    const ui = unitInfo(db, ur); if (!ui) continue;
+    if (ui.kind === 'len') { res.len = ui.scale; res.lenLabel = ui.label; }
+    if (ui.kind === 'ang') { res.ang = ui.scale; res.angLabel = ui.label; }
+  }
+  cache.set(key, res); return res;
+}
+
+/* ---------- 4. Arbre produit et corps instanciés ---------- */
+const SOLID_TYPES = new Set(['MANIFOLD_SOLID_BREP', 'BREP_WITH_VOIDS', 'SHELL_BASED_SURFACE_MODEL', 'FACETED_BREP']);
+const TESS_TYPES = ['TRIANGULATED_FACE', 'COMPLEX_TRIANGULATED_FACE', 'TESSELLATED_SOLID', 'TESSELLATED_SHELL', 'TRIANGULATED_SURFACE_SET', 'COMPLEX_TRIANGULATED_SURFACE_SET', 'TESSELLATED_SHAPE_REPRESENTATION'];
+
+function frameOf(db, ref, lenScale) {
+  const a = db.ref(ref); const f = { o: [0, 0, 0], z: [0, 0, 1], x: [1, 0, 0] };
+  if (!a || !a.a) return finishFrame(f);
+  const pa = a.a;
+  const pt = db.ref(pa[1]); if (pt) f.o = V.mul(pt.a[1].slice(0, 3).concat([0, 0, 0]).slice(0, 3), lenScale);
+  const z = db.ref(pa[2]); if (z && pa[2]) f.z = V.norm(z.a[1].slice(0, 3));
+  const x = db.ref(pa[3]); if (x && pa[3]) f.x = x.a[1].slice(0, 3);
+  return finishFrame(f);
+}
+function finishFrame(f) {
+  let x = V.sub(f.x, V.mul(f.z, V.dot(f.x, f.z)));
+  if (V.len(x) < 1e-9) x = V.perp(f.z);
+  f.x = V.norm(x); f.y = V.cross(f.z, f.x); return f;
+}
+
+function extractBodies(db, S, progress) {
+  const alerts = [];
+  const ctxCache = new Map();
+  const isRep = (t) => t.indexOf('SHAPE_REPRESENTATION') >= 0 && t !== 'SHAPE_DEFINITION_REPRESENTATION' && t !== 'CONTEXT_DEPENDENT_SHAPE_REPRESENTATION' && t.indexOf('RELATIONSHIP') < 0;
+  const repIds = []; for (const [t, ids] of db.byType) if (isRep(t)) for (const id of ids) { const e = db.get(id); if (!e.complex) repIds.push(id); }
+  // Liens entre représentations sans transformation (SRR simple)
+  const repLinks = new Map(); const link = (a, b) => { if (!repLinks.has(a)) repLinks.set(a, []); repLinks.get(a).push(b); };
+  for (const t of ['SHAPE_REPRESENTATION_RELATIONSHIP', 'REPRESENTATION_RELATIONSHIP']) for (const id of db.ids(t)) {
+    const e = db.get(id); if (e.complex) continue; const a = e.a; if (a[2] && a[3]) { link(a[2].r, a[3].r); link(a[3].r, a[2].r); }
+  }
+  // Unité de chaque représentation
+  const unitsOfRep = (rid) => { const r = db.get(rid); return contextUnits(db, r && r.a ? r.a[2] : null, ctxCache); };
+  const unitSeen = new Map(); const angSeen = new Map();
+  const lenScaleOf = (rid) => {
+    const u = unitsOfRep(rid);
+    const key = u.lenLabel || 'non trouvée'; unitSeen.set(key, (unitSeen.get(key) || 0) + 1);
+    if (S.unitOverride && S.unitOverride !== 'auto') return { mm: { mm: 1, m: 1000, in: 25.4, cm: 10 }[S.unitOverride], found: u.len != null };
+    return { mm: u.len != null ? u.len : 1, found: u.len != null };
+  };
+  const angScaleOf = (rid) => { const u = unitsOfRep(rid); angSeen.set(u.angLabel || 'non trouvée', 1); return u.ang != null ? u.ang : 1; };
+  // Représentation(s) de chaque PRODUCT_DEFINITION
+  const sdrByPD = new Map();
+  for (const id of db.ids('SHAPE_DEFINITION_REPRESENTATION')) {
+    const e = db.get(id); const pds = db.ref(e.a[0]); if (!pds || pds.t !== 'PRODUCT_DEFINITION_SHAPE') continue;
+    const def = pds.a[2]; if (!def) continue; const d = db.get(def.r); if (!d) continue;
+    if (d.t.indexOf('PRODUCT_DEFINITION') === 0 && d.t !== 'PRODUCT_DEFINITION_SHAPE') { if (!sdrByPD.has(def.r)) sdrByPD.set(def.r, []); sdrByPD.get(def.r).push(e.a[1].r); }
+  }
+  const pdName = (pdId) => {
+    const pd = db.get(pdId); if (!pd || !pd.a) return '';
+    const pdf = db.ref(pd.a[2]); const pr = pdf && db.ref(pdf.a[2]);
+    if (pr && pr.t === 'PRODUCT') return (pr.a[1] || pr.a[0] || '').trim();
+    return (pd.a[0] || '').trim();
+  };
+  // NAUO et transformations d'assemblage
+  const children = new Map(); const relatedSet = new Set(); const relatingSet = new Set();
+  for (const id of db.ids('NEXT_ASSEMBLY_USAGE_OCCURRENCE')) {
+    const e = db.get(id); const pa = e.a[3] && e.a[3].r, ch = e.a[4] && e.a[4].r; if (!pa || !ch) continue;
+    if (!children.has(pa)) children.set(pa, []); children.get(pa).push({ id, child: ch, name: (e.a[1] || e.a[0] || '').trim() });
+    relatedSet.add(ch); relatingSet.add(pa);
+  }
+  const cdsrByNauo = new Map();
+  for (const id of db.ids('CONTEXT_DEPENDENT_SHAPE_REPRESENTATION')) {
+    const e = db.get(id); const pds = db.ref(e.a[1]); if (pds && pds.a && pds.a[2]) cdsrByNauo.set(pds.a[2].r, e.a[0].r);
+  }
+  const repClosure = (rid) => { const out = new Set([rid]); const st = [rid]; while (st.length) { const r = st.pop(); for (const o of repLinks.get(r) || []) if (!out.has(o)) { out.add(o); st.push(o); } } return out; };
+  const placementMatrix = (ref, rid) => M.fromFrame(frameOf(db, ref, lenScaleOf(rid).mm));
+  const nauoTransform = (nauo, childPD) => {
+    const relId = cdsrByNauo.get(nauo.id);
+    if (!relId) { alerts.push({ lvl: 'warn', msg: `Occurrence « ${nauo.name} » (#${nauo.id}) sans transformation d'assemblage (CONTEXT_DEPENDENT_SHAPE_REPRESENTATION absente) : position identité supposée.` }); return M.id(); }
+    const rr = db.get(relId);
+    const base = db.part(rr, 'REPRESENTATION_RELATIONSHIP') || (rr.complex ? null : rr.a);
+    const wt = db.part(rr, 'REPRESENTATION_RELATIONSHIP_WITH_TRANSFORMATION');
+    if (!base || !wt) return M.id();
+    const op = db.ref(wt[0]); if (!op) return M.id();
+    const rep1 = base[2].r, rep2 = base[3].r;
+    const childReps = new Set(); for (const r of sdrByPD.get(childPD) || []) for (const x of repClosure(r)) childReps.add(x);
+    if (op.t === 'ITEM_DEFINED_TRANSFORMATION') {
+      const m1 = placementMatrix(op.a[2], rep1), m2 = placementMatrix(op.a[3], rep2);
+      if (childReps.has(rep1) || !childReps.has(rep2)) return M.mul(m2, M.inv(m1));
+      return M.mul(m1, M.inv(m2));
+    }
+    if (op.t === 'CARTESIAN_TRANSFORMATION_OPERATOR_3D') {
+      const s = lenScaleOf(rep2).mm; const a = op.a;
+      const f = { o: db.ref(a[4]) ? V.mul(db.ref(a[4]).a[1], s) : [0, 0, 0], x: db.ref(a[2]) ? db.ref(a[2]).a[1] : [1, 0, 0], z: db.ref(a[6]) ? db.ref(a[6]).a[1] : [0, 0, 1] };
+      if (a[5] != null && Math.abs(a[5] - 1) > 1e-9) alerts.push({ lvl: 'warn', msg: `Transformation avec facteur d'échelle ${a[5]} ignoré (#${wt[0].r}).` });
+      return M.fromFrame(finishFrame(f));
+    }
+    alerts.push({ lvl: 'warn', msg: `Type de transformation non pris en charge : ${op.t} (#${wt[0].r}).` }); return M.id();
+  };
+  // Collecte des solides d'une représentation (avec MAPPED_ITEM)
+  const bodies = []; const reached = new Set();
+  const collect = (rid, m, info, seen) => {
+    if (seen.has(rid)) return; seen.add(rid);
+    const r = db.get(rid); if (!r || !r.a) return;
+    for (const it of r.a[1] || []) {
+      if (!it || it.r === undefined) continue; const e = db.get(it.r); if (!e) continue;
+      if (SOLID_TYPES.has(e.t)) {
+        reached.add(it.r);
+        bodies.push({ brep: it.r, m, rep: rid, len: lenScaleOf(rid), ang: angScaleOf(rid), name: info.name, path: info.path, pd: info.pd, brepName: (e.a[0] || '').trim() });
+      } else if (e.t === 'MAPPED_ITEM') {
+        const map = db.ref(e.a[1]); if (!map) continue; const mrep = map.a[1].r;
+        const T = M.mul(placementMatrix(e.a[2], rid), M.inv(placementMatrix(map.a[0], mrep)));
+        collect(mrep, M.mul(m, T), info, new Set());
+      }
+    }
+    for (const o of repLinks.get(rid) || []) collect(o, m, info, seen);
+  };
+  const visit = (pd, m, path, depth) => {
+    if (depth > 30) return;
+    const name = pdName(pd);
+    for (const rid of sdrByPD.get(pd) || []) collect(rid, m, { name, path, pd }, new Set());
+    for (const ch of children.get(pd) || []) {
+      const T = nauoTransform(ch, ch.child);
+      visit(ch.child, M.mul(m, T), path + ' / ' + (pdName(ch.child) || ch.name), depth + 1);
+    }
+  };
+  const allPD = new Set([...sdrByPD.keys(), ...relatingSet]);
+  const roots = [...allPD].filter(pd => !relatedSet.has(pd)).sort((a, b) => a - b);
+  for (const r of roots) visit(r, M.id(), pdName(r), 0);
+  // Solides hors arbre produit
+  for (const t of SOLID_TYPES) for (const id of db.ids(t)) if (!reached.has(id)) {
+    const rid = repIds.find(r => (db.get(r).a[1] || []).some(x => x && x.r === id));
+    if (rid === undefined && reached.size) continue;
+    const e = db.get(id);
+    bodies.push({ brep: id, m: M.id(), rep: rid, len: rid !== undefined ? lenScaleOf(rid) : { mm: 1, found: false }, ang: rid !== undefined ? angScaleOf(rid) : 1, name: (e.a[0] || '').trim(), path: '(hors arbre produit)', pd: null, brepName: (e.a[0] || '').trim() });
+    alerts.push({ lvl: 'info', msg: `Solide #${id} hors arbre produit : position identité.` });
+  }
+  return { bodies, alerts, unitSeen: [...unitSeen.entries()], angSeen: [...angSeen.keys()] };
+}
+
+/* ---------- 5. Faces analytiques ---------- */
+function makeFaceExtractor(db) {
+  const ptCache = new Map(), edgeCache = new Map(), faceCache = new Map();
+  const P = (ref) => { const id = ref.r; let p = ptCache.get(id); if (!p) { const e = db.get(id); const c = e && e.a ? e.a[1] : [0, 0, 0]; p = [c[0] || 0, c[1] || 0, c[2] || 0]; ptCache.set(id, p); } return p; };
+  const vtx = (ref) => { const v = db.ref(ref); if (!v) return null; if (v.t === 'VERTEX_POINT') return P(v.a[1]); return null; };
+  const baseCurve = (ref, d = 0) => { const c = db.ref(ref); if (!c || d > 5) return c; if (c.t === 'SURFACE_CURVE' || c.t === 'SEAM_CURVE' || c.t === 'INTERSECTION_CURVE' || c.t === 'BOUNDED_SURFACE_CURVE') return baseCurve(c.a[1], d + 1); if (c.t === 'TRIMMED_CURVE') return baseCurve(c.a[1], d + 1); return c; };
+  // Points caractéristiques d'une arête : sommets + milieu d'arc + points de contrôle B-spline
+  const edgePts = (ref) => {
+    const id = ref.r; if (edgeCache.has(id)) return edgeCache.get(id);
+    const e = db.get(id); const out = []; let kind = 'other';
+    if (e && e.t === 'EDGE_CURVE') {
+      const a = vtx(e.a[1]), b = vtx(e.a[2]); if (a) out.push(a); if (b) out.push(b);
+      const c = baseCurve(e.a[3]);
+      if (c && c.t === 'CIRCLE') {
+        kind = 'circle';
+        const f = frameOf(db, c.a[1], 1); const r = c.a[2];
+        const angOf = (p) => { const w = V.sub(p, f.o); return Math.atan2(V.dot(w, f.y), V.dot(w, f.x)); };
+        let a0, a1;
+        if (a && b) { if (e.a[4] && e.a[4].en === 'F') { a0 = angOf(b); a1 = angOf(a); } else { a0 = angOf(a); a1 = angOf(b); } } else { a0 = 0; a1 = 0; }
+        let sw = a1 - a0; while (sw <= 1e-9) sw += 2 * Math.PI; if (sw > 2 * Math.PI + 1e-9) sw -= 2 * Math.PI;
+        const k = sw > Math.PI ? 4 : 2;
+        for (let i = 1; i < k; i++) { const t = a0 + sw * i / k; out.push(V.add(f.o, V.add(V.mul(f.x, r * Math.cos(t)), V.mul(f.y, r * Math.sin(t))))); }
+      } else if (c && (c.t === 'B_SPLINE_CURVE_WITH_KNOTS' || c.t === 'B_SPLINE_CURVE')) {
+        kind = 'bspline'; for (const pr of c.a[2] || []) out.push(P(pr));
+      } else if (c && c.complex) {
+        const bs = db.part(c, 'B_SPLINE_CURVE'); if (bs) { kind = 'bspline'; for (const pr of bs[1] || []) out.push(P(pr)); }
+      } else if (c && c.t === 'LINE') kind = 'line';
+      else if (c && c.t === 'ELLIPSE') kind = 'ellipse';
+    }
+    const res = { pts: out, kind }; edgeCache.set(id, res); return res;
+  };
+  const surfInfo = (sref) => {
+    const s = db.ref(sref); if (!s) return { st: 'AUTRE', tn: '?' };
+    const tn = s.complex ? 'COMPLEXE(' + s.parts.map(x => x.t).join(',') + ')' : s.t;
+    switch (s.t) {
+      case 'CYLINDRICAL_SURFACE': return { st: 'CYL', tn, pos: s.a[1], r: s.a[2] };
+      case 'TOROIDAL_SURFACE': case 'DEGENERATE_TOROIDAL_SURFACE': return { st: 'TOR', tn, pos: s.a[1], R: s.a[2], r: s.a[3] };
+      case 'CONICAL_SURFACE': return { st: 'CON', tn, pos: s.a[1], r: s.a[2], semi: s.a[3] };
+      case 'PLANE': return { st: 'PLN', tn, pos: s.a[1] };
+      case 'SPHERICAL_SURFACE': return { st: 'SPH', tn, pos: s.a[1], r: s.a[2] };
+    }
+    if (tn.indexOf('B_SPLINE') >= 0 || tn.indexOf('BEZIER') >= 0) return { st: 'BSP', tn };
+    if (tn.indexOf('SURFACE_OF_REVOLUTION') >= 0 || tn.indexOf('SURFACE_OF_LINEAR_EXTRUSION') >= 0 || tn.indexOf('OFFSET_SURFACE') >= 0) return { st: 'SWEPT', tn };
+    return { st: 'AUTRE', tn };
+  };
+  // Faces brutes (repère du fichier) d'un solide, mises en cache
+  const brepFaces = (brepId) => {
+    if (faceCache.has(brepId)) return faceCache.get(brepId);
+    const e = db.get(brepId); const shells = []; let solid = false, faceted = false;
+    if (e.t === 'MANIFOLD_SOLID_BREP') { shells.push([e.a[1], false]); solid = true; }
+    else if (e.t === 'BREP_WITH_VOIDS') { shells.push([e.a[1], false]); for (const v of e.a[2] || []) shells.push([v, false]); solid = true; }
+    else if (e.t === 'SHELL_BASED_SURFACE_MODEL') for (const s of e.a[1] || []) shells.push([s, false]);
+    else if (e.t === 'FACETED_BREP') { shells.push([e.a[1], false]); solid = true; faceted = true; }
+    const faces = [];
+    const doShell = (ref, flip) => {
+      const s = db.ref(ref); if (!s) return;
+      if (s.t === 'ORIENTED_CLOSED_SHELL' || s.t === 'ORIENTED_OPEN_SHELL') return doShell(s.a[2], flip !== (s.a[3] && s.a[3].en === 'F'));
+      for (const fr of s.a[1] || []) doFace(fr, flip);
+    };
+    const doFace = (ref, flip) => {
+      const f = db.ref(ref); if (!f) return;
+      if (f.t === 'ORIENTED_FACE') return doFace(f.a[2], flip !== (f.a[3] && f.a[3].en === 'F'));
+      if (f.t !== 'ADVANCED_FACE' && f.t !== 'FACE_SURFACE') return;
+      const si = surfInfo(f.a[2]);
+      const sense = (f.a[3] && f.a[3].en === 'F') ? !true : true;
+      const pts = []; let nb = 0;
+      for (const br of f.a[1] || []) {
+        const b = db.ref(br); if (!b) continue; const loop = db.ref(b.a[1]); if (!loop) continue;
+        if (loop.t === 'EDGE_LOOP') for (const oer of loop.a[1] || []) { const oe = db.ref(oer); if (!oe) continue; const ec = oe.t === 'ORIENTED_EDGE' ? oe.a[3] : oer; const ep = edgePts(ec); for (const p of ep.pts) pts.push(p); if (ep.kind === 'bspline') nb++; }
+        else if (loop.t === 'VERTEX_LOOP') { const p = vtx(loop.a[1]); if (p) pts.push(p); }
+        else if (loop.t === 'POLY_LOOP') for (const pr of loop.a[1] || []) pts.push(P(pr));
+      }
+      faces.push({ fid: ref.r, sid: f.a[2] && f.a[2].r, st: si.st, tn: si.tn, sense: flip ? !sense : sense, si, pts, nbspl: nb });
+    };
+    for (const [s, fl] of shells) doShell(s, fl);
+    const res = { faces, solid, faceted }; faceCache.set(brepId, res); return res;
+  };
+  // Faces d'une instance (mm, repère global)
+  const instanceFaces = (body) => {
+    const raw = brepFaces(body.brep); const s = body.len.mm; const m = body.m; const out = [];
+    for (const f of raw.faces) {
+      const g = { fid: f.fid, sid: f.sid, st: f.st, tn: f.tn, sense: f.sense, nbspl: f.nbspl };
+      g.pts = f.pts.map(p => M.ap(m, V.mul(p, s)));
+      if (f.si.pos) { const fr = frameOf(db, f.si.pos, s); g.o = M.ap(m, fr.o); g.z = V.norm(M.apd(m, fr.z)); g.x = V.norm(M.apd(m, fr.x)); g.y = V.cross(g.z, g.x); }
+      if (f.si.r != null) g.r = f.si.r * s;
+      if (f.si.R != null) g.R = f.si.R * s;
+      if (f.si.semi != null) g.semi = f.si.semi * body.ang;
+      out.push(g);
+    }
+    return { faces: out, solid: raw.solid, faceted: raw.faceted };
+  };
+  return { instanceFaces };
+}
+
+/* ---------- 6. Reconnaissance des primitives ---------- */
+function azCoverage(angles) {
+  if (angles.length < 2) return { cov: 0, start: 0 };
+  const T = 2 * Math.PI; const a = angles.map(x => ((x % T) + T) % T).sort((p, q) => p - q);
+  let gap = a[0] + T - a[a.length - 1], start = a[0];
+  for (let i = 1; i < a.length; i++) { const g = a[i] - a[i - 1]; if (g > gap) { gap = g; start = a[i]; } }
+  return { cov: T - gap, start };
+}
+function clusterValues(items, key, tolFn) {
+  const s = items.slice().sort((p, q) => key(p) - key(q)); const out = [];
+  for (const it of s) { const k = key(it); const last = out[out.length - 1]; if (last && Math.abs(k - last.v) <= tolFn(last.v)) { last.items.push(it); } else out.push({ v: k, items: [it] }); }
+  for (const c of out) c.v = c.items.reduce((x, i) => x + key(i), 0) / c.items.length;
+  return out;
+}
+// Regroupement de faces par axe (droite) commun
+function groupByAxis(faces, tol) {
+  const lines = [];
+  for (const f of faces) {
+    let d = f.z.slice(); const ax = [Math.abs(d[0]), Math.abs(d[1]), Math.abs(d[2])]; const mi = ax.indexOf(Math.max(...ax)); if (d[mi] < 0) d = V.mul(d, -1);
+    let L = lines.find(l => V.len(V.cross(l.d, d)) < 1e-4 && V.len(V.cross(V.sub(f.o, l.o), l.d)) < tol);
+    if (!L) { L = { o: f.o, d, faces: [] }; L.x = V.perp(d); L.y = V.cross(d, L.x); lines.push(L); }
+    L.faces.push(f);
+  }
+  for (const L of lines) for (const f of L.faces) {
+    let t0 = Infinity, t1 = -Infinity; const az = [];
+    for (const p of f.pts) { const w = V.sub(p, L.o); const t = V.dot(w, L.d); if (t < t0) t0 = t; if (t > t1) t1 = t; const r = V.sub(w, V.mul(L.d, t)); if (V.len(r) > 1e-9) az.push(Math.atan2(V.dot(r, L.y), V.dot(r, L.x))); }
+    f.t0 = t0; f.t1 = t1; f.az = az;
+  }
+  return lines;
+}
+function mergeIntervals(faces, tol) {
+  const s = faces.filter(f => isFinite(f.t0)).sort((a, b) => a.t0 - b.t0); const out = [];
+  for (const f of s) { const l = out[out.length - 1]; if (l && f.t0 <= l.t1 + tol) { l.t1 = Math.max(l.t1, f.t1); l.faces.push(f); } else out.push({ t0: f.t0, t1: f.t1, faces: [f] }); }
+  for (const iv of out) iv.cov = azCoverage([].concat(...iv.faces.map(f => f.az))).cov;
+  return out;
+}
+const MIN_COV = 200 / DEG;
+const src = (f) => '#' + f.sid + ' (' + f.tn + ')';
+
+function recognizeBody(body, S, alerts) {
+  const prims = []; const tol = S.tol; const notes = [];
+  const fs = body.faces;
+  const cyl = fs.filter(f => f.st === 'CYL' && f.r > 0), tor = fs.filter(f => f.st === 'TOR' && f.R > 0), con = fs.filter(f => f.st === 'CON');
+  const hasBore = body.solid && [...cyl, ...tor, ...con].some(f => !f.sense);
+  const mode = !body.solid ? 'pair' : (hasBore ? 'bore' : 'single');
+  body.mode = mode;
+  const singleAs = S.singleAs || 'OD';
+  const rtol = (r) => Math.max(1e-4, r * 1e-4);
+  // ---- Cylindres → tronçons droits
+  const lines = groupByAxis(cyl, tol); const segs = [];
+  for (const L of lines) {
+    const cls = clusterValues(L.faces, f => f.r, rtol);
+    let bores = [], outers = [];
+    if (mode === 'bore') { for (const c of cls) { const b = c.items.filter(f => !f.sense), o = c.items.filter(f => f.sense); if (b.length) bores.push({ v: c.v, items: b }); if (o.length) outers.push({ v: c.v, items: o }); } }
+    else if (mode === 'pair') { if (cls.length >= 2) { bores = [cls[0]]; outers = cls.slice(1); } else outers = cls; }
+    else outers = cls;
+    const passage = bores.length ? bores : (mode !== 'bore' && outers.length ? [outers[0]] : []);
+    const isSingle = !bores.length;
+    for (const c of passage) {
+      for (const iv of mergeIntervals(c.items, tol)) {
+        if (iv.cov < MIN_COV) { notes.push(`cylindre partiel R=${c.v.toFixed(2)} mm ignoré (couverture ${(iv.cov * DEG).toFixed(0)}° : congé ou méplat probable)`); continue; }
+        if (iv.t1 - iv.t0 < tol) continue;
+        const sg = { type: 'PIPE', line: L, t0: iv.t0, t1: iv.t1, r: c.v, src: src(iv.faces[0]), faces: iv.faces };
+        if (isSingle) { sg.single = true; sg.singleR = c.v; sg.singleSrc = sg.src; }
+        else {
+          let best = null, bestOv = 0;
+          for (const o of outers) { if (o.v <= c.v + 1e-6) continue; for (const oi of mergeIntervals(o.items, tol)) { const ov = Math.min(oi.t1, iv.t1) - Math.max(oi.t0, iv.t0); if (ov > bestOv + 1e-6 || (Math.abs(ov - bestOv) <= 1e-6 && best && o.v < best.v)) { bestOv = ov; best = { v: o.v, f: oi.faces[0] }; } } }
+          if (best && bestOv > 0) { sg.ro = best.v; sg.roSrc = src(best.f); if (bestOv < 0.5 * (iv.t1 - iv.t0)) notes.push(`paroi extérieure partielle sur le tronçon Ø${(2 * c.v).toFixed(2)}`); }
+        }
+        segs.push(sg);
+      }
+    }
+  }
+  // Filtre « perçage » : alésage parallèle, extérieur à un alésage plus grand du même corps
+  for (const s of segs) {
+    if (s.single) continue;
+    const big = segs.find(q => q !== s && !q.single && q.r > s.r && V.len(V.cross(q.line.d, s.line.d)) < 1e-4 && V.len(V.cross(V.sub(s.line.o, q.line.o), q.line.d)) > q.r);
+    if (big) { s.drop = 'perçage'; }
+  }
+  const drilled = segs.filter(s => s.drop).length;
+  if (drilled) notes.push(`${drilled} perçage(s) parallèle(s) écarté(s) (trous de bride probables)`);
+  for (const s of segs.filter(s => !s.drop)) {
+    const a = V.add(s.line.o, V.mul(s.line.d, s.t0)), b = V.add(s.line.o, V.mul(s.line.d, s.t1));
+    const p = { type: 'PIPE', a, b, dir: s.line.d, L: s.t1 - s.t0, src: s.src, faceIds: s.faces.map(f => f.fid) };
+    setDiam(p, s, singleAs);
+    prims.push(p);
+  }
+  // ---- Tores → coudes cintrés
+  const tg = [];
+  for (const f of tor) {
+    let g = tg.find(g => V.dist(g.o, f.o) < tol && V.len(V.cross(g.z, f.z)) < 1e-4 && Math.abs(g.R - f.R) < tol);
+    if (!g) { g = { o: f.o, z: f.z, x: f.x, y: f.y, R: f.R, faces: [] }; tg.push(g); }
+    g.faces.push(f);
+  }
+  for (const g of tg) {
+    const phi = [], psi = [];
+    for (const f of g.faces) for (const p of f.pts) {
+      const w = V.sub(p, g.o); const ph = Math.atan2(V.dot(w, g.y), V.dot(w, g.x)); phi.push(ph);
+      const rad = V.add(V.mul(g.x, Math.cos(ph)), V.mul(g.y, Math.sin(ph))); const q = V.sub(w, V.mul(rad, g.R));
+      psi.push(Math.atan2(V.dot(q, g.z), V.dot(q, rad)));
+    }
+    const cv = azCoverage(phi), cm = azCoverage(psi);
+    if (cv.cov > 2 * Math.PI - 0.02) { notes.push(`tore complet R=${g.R.toFixed(2)} ignoré (congé de révolution probable)`); continue; }
+    if (cm.cov < MIN_COV) { notes.push(`tore partiel R=${g.R.toFixed(2)} ignoré (congé probable)`); continue; }
+    const cls = clusterValues(g.faces, f => f.r, rtol);
+    let bores = [], outers = [];
+    if (mode === 'bore') { for (const c of cls) { const b = c.items.filter(f => !f.sense), o = c.items.filter(f => f.sense); if (b.length) bores.push({ v: c.v, items: b }); if (o.length) outers.push({ v: c.v, items: o }); } }
+    else if (mode === 'pair' && cls.length >= 2) { bores = [cls[0]]; outers = cls.slice(1); } else outers = cls;
+    const a0 = cv.start, a1 = cv.start + cv.cov;
+    const P = (ph) => V.add(g.o, V.mul(V.add(V.mul(g.x, Math.cos(ph)), V.mul(g.y, Math.sin(ph))), g.R));
+    const T = (ph) => V.add(V.mul(g.x, -Math.sin(ph)), V.mul(g.y, Math.cos(ph)));
+    const p = { type: 'BEND', a: P(a0), b: P(a1), ta: T(a0), tb: T(a1), C: g.o, n: g.z, ex: g.x, ey: g.y, phi0: a0, R: g.R, theta: cv.cov * DEG, src: src(g.faces[0]), faceIds: g.faces.map(f => f.fid) };
+    const s = { r: bores.length ? bores[0].v : null, src: bores.length ? src(bores[0].items[0]) : null };
+    if (bores.length) { const o = outers.filter(o => o.v > s.r).sort((x, y) => x.v - y.v)[0]; if (o) { s.ro = o.v; s.roSrc = src(o.items[0]); } }
+    else if (outers.length) { s.single = true; s.singleR = outers[0].v; s.singleSrc = src(outers[0].items[0]); }
+    setDiam(p, s, singleAs);
+    p.L = g.R * cv.cov;
+    if (p.theta > 181) notes.push(`coude de ${p.theta.toFixed(1)}° (> 180°) : vérifier`);
+    prims.push(p);
+  }
+  // ---- Cônes → réductions / élargissements progressifs
+  if (con.length) {
+    const cl = groupByAxis(con, tol);
+    for (const L of cl) {
+      const ivs = mergeIntervals(L.faces, tol);
+      for (const iv of ivs) {
+        if (iv.cov < MIN_COV) { notes.push('cône partiel ignoré (chanfrein probable)'); continue; }
+        if (iv.t1 - iv.t0 < tol) continue;
+        const rAt = (f, t) => { const A = V.add(L.o, V.mul(L.d, t)); const tf = V.dot(V.sub(A, f.o), f.z); return f.r + tf * Math.tan(f.semi); };
+        let fsel = iv.faces;
+        let bset = mode === 'bore' ? fsel.filter(f => !f.sense) : [];
+        let oset = mode === 'bore' ? fsel.filter(f => f.sense) : fsel;
+        if (mode === 'pair') { const mid = (iv.t0 + iv.t1) / 2; const srt = fsel.slice().sort((x, y) => rAt(x, mid) - rAt(y, mid)); const r0 = rAt(srt[0], mid); bset = srt.filter(f => Math.abs(rAt(f, mid) - r0) < tol); oset = srt.filter(f => Math.abs(rAt(f, mid) - r0) >= tol); if (!oset.length) { oset = bset; bset = []; } }
+        if (fsel.some(f => f.semi > Math.PI / 2)) { notes.push('demi-angle de cône > 90° : unité d\'angle douteuse'); }
+        const ref = bset.length ? bset : oset; if (!ref.length) continue;
+        const f0 = ref[0];
+        const t0 = Math.min(...ref.map(f => f.t0)), t1 = Math.max(...ref.map(f => f.t1));
+        const p = { type: 'RED', a: V.add(L.o, V.mul(L.d, t0)), b: V.add(L.o, V.mul(L.d, t1)), dir: L.d, L: t1 - t0, src: src(f0), faceIds: iv.faces.map(f => f.fid) };
+        const ra = Math.abs(rAt(f0, t0)), rb = Math.abs(rAt(f0, t1));
+        p.angle = 2 * Math.abs(f0.semi) * DEG;
+        if (bset.length) { p.Da = 2 * ra; p.Db = 2 * rb; p.diSrc = src(f0); const o = oset[0]; if (o) { p.Dea = 2 * Math.abs(rAt(o, t0)); p.Deb = 2 * Math.abs(rAt(o, t1)); p.deSrc = src(o); } }
+        else { p.single = true; if (singleAs === 'ID') { p.Da = 2 * ra; p.Db = 2 * rb; p.diSrc = src(f0); } else { p.Dea = 2 * ra; p.Deb = 2 * rb; p.deSrc = src(f0); p.odOnly = true; } }
+        prims.push(p);
+      }
+    }
+  }
+  return { prims, notes };
+}
+function setDiam(p, s, singleAs) {
+  if (s.r != null && !s.single) { p.Di = 2 * s.r; p.diSrc = s.src; if (s.ro != null) { p.De = 2 * s.ro; p.deSrc = s.roSrc; } }
+  else if (s.single) { if (singleAs === 'ID') { p.Di = 2 * s.singleR; p.diSrc = s.singleSrc; p.idOnly = true; } else { p.De = 2 * s.singleR; p.deSrc = s.singleSrc; p.odOnly = true; } }
+}
+
+/* ---------- 7. Réseau ---------- */
+const EQ_TYPES = ['Pompe', 'Vanne', 'Clapet anti-retour', 'Filtre', 'Échangeur', 'Réservoir', 'Débitmètre', 'Orifice / diaphragme', 'Équipement (autre)'];
+function normName(s) { return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase(); }
+function classifyName(name, S) {
+  const n = normName(name);
+  for (const [type, kws] of S.keywords) for (const k of kws) { const K = normName(k).trim(); if (K.length < 2) continue; const re = new RegExp('(^|[^A-Z])' + K.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); if (re.test(n)) return { type, kw: k }; }
+  return null;
+}
+
+function analyze(db, S, progress) {
+  const t0 = Date.now();
+  const res = extractBodies(db, S); const alerts = res.alerts.slice();
+  const fx = makeFaceExtractor(db);
+  const bodies = [];
+  const tessCount = TESS_TYPES.reduce((s, t) => s + db.ids(t).length, 0);
+  if (tessCount) alerts.push({ lvl: 'err', msg: `${tessCount} entité(s) de géométrie tessellée (maillage) détectée(s) : aucune cote ne peut en être extraite, seules les surfaces analytiques sont utilisées.` });
+  if (!res.bodies.length) alerts.push({ lvl: 'err', msg: 'Aucun solide ni modèle surfacique B-rep trouvé dans le fichier.' });
+  const curveSets = db.ids('GEOMETRIC_CURVE_SET').length;
+  if (curveSets && !res.bodies.length) alerts.push({ lvl: 'err', msg: `Le fichier ne contient que des courbes (${curveSets} GEOMETRIC_CURVE_SET : lignes d'axe filaires ?). Ce cas n'est pas traité.` });
+  // Corps instanciés
+  res.bodies.forEach((b, i) => {
+    const inst = fx.instanceFaces(b);
+    const counts = {}; for (const f of inst.faces) counts[f.st] = (counts[f.st] || 0) + 1;
+    let bb = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+    for (const f of inst.faces) for (const p of f.pts) for (let k = 0; k < 3; k++) { if (p[k] < bb[k]) bb[k] = p[k]; if (p[k] > bb[k + 3]) bb[k + 3] = p[k]; }
+    const name = b.name || b.brepName || '';
+    bodies.push({ idx: i, key: b.brep + '@' + b.path, name, path: b.path, brep: b.brep, faces: inst.faces, solid: inst.solid, faceted: inst.faceted, counts, bbox: bb, unitFound: b.len.found });
+    if (progress && i % 20 === 0) progress(i / res.bodies.length);
+  });
+  // Classement des corps
+  for (const b of bodies) {
+    const ov = S.bodyOverrides && S.bodyOverrides[b.key];
+    const auto = classifyName(b.name, S);
+    b.autoClass = auto ? auto.type : 'Tuyauterie'; b.kw = auto ? auto.kw : '';
+    b.cls = ov && ov !== 'Auto' ? ov : b.autoClass;
+    b.unnamed = !b.name || /^(SOLID|BODY|CORPS|PART|PIECE|PIÈCE|COMPONENT|OPEN CASCADE STEP TRANSLATOR.*|NONE|UNNAMED)\s*[-_]?\d*$/i.test(b.name);
+  }
+  // Reconnaissance
+  let prims = [];
+  for (const b of bodies) {
+    b.nPrims = 0; b.notes = [];
+    const nb = b.faces.length; const nbs = (b.counts.BSP || 0) + (b.counts.SWEPT || 0);
+    if (b.faceted) alerts.push({ lvl: 'err', msg: `Corps « ${b.name || '#' + b.brep} » : B-rep à facettes (géométrie maillée), pas de cotes analytiques.` });
+    if (b.cls === 'Ignorer') continue;
+    if (b.cls !== 'Tuyauterie') continue;
+    const r = recognizeBody(b, S, alerts);
+    for (const p of r.prims) { p.body = b.idx; prims.push(p); }
+    b.nPrims = r.prims.length; b.notes = r.notes;
+    if (nbs > 0 && nbs >= 0.3 * nb) alerts.push({ lvl: 'warn', msg: `Corps « ${b.name || '#' + b.brep} » : ${nbs} face(s) B-spline/balayée(s) sur ${nb} — tuyauterie flexible ou cintrage libre probable, non reconnue analytiquement.` });
+    if (!b.solid) alerts.push({ lvl: 'info', msg: `Corps « ${b.name || '#' + b.brep} » : modèle surfacique (pas un solide), intérieur/extérieur déduits des rayons.` });
+    if (b.mode === 'single' && r.prims.length) alerts.push({ lvl: 'warn', msg: `Corps « ${b.name || '#' + b.brep} » : un seul cylindre par tronçon (pas d'alésage) — interprété comme ${S.singleAs === 'ID' ? 'diamètre intérieur (volume fluide)' : 'diamètre extérieur ; épaisseur proposée selon la norme choisie (statut « par défaut »)'}.` });
+  }
+  // Filtre « enveloppe » (collier/support) : alésage = De d'un tube coaxial d'un autre corps
+  for (const p of prims) {
+    if (p.type !== 'PIPE' || p.Di == null) continue;
+    const host = prims.find(q => q !== p && q.type === 'PIPE' && q.body !== p.body && q.De != null && Math.abs(q.De - p.Di) < Math.max(S.tol, 0.01 * q.De) && V.len(V.cross(q.dir, p.dir)) < 1e-3 && V.len(V.cross(V.sub(p.a, q.a), q.dir)) < S.tol * 5);
+    if (host) { p.drop = true; alerts.push({ lvl: 'info', msg: `Corps « ${bodies[p.body].name} » : cylindre Ø${p.Di.toFixed(2)} enveloppant un tube (collier/support/manchon probable) écarté.` }); }
+  }
+  prims = prims.filter(p => !p.drop);
+  // Extrémités
+  const ends = (p) => {
+    if (p.type === 'BEND') return [{ p: p.a, out: V.mul(p.ta, -1) }, { p: p.b, out: p.tb }];
+    return [{ p: p.a, out: V.mul(p.dir, -1) }, { p: p.b, out: p.dir }];
+  };
+  for (const p of prims) p.ends = ends(p);
+  const tol = S.tol;
+  const near = (a, b) => V.dist(a, b) <= tol;
+  // Extrémités déjà raccordées (pour ne pas les prendre pour un piquage)
+  const allEnds = []; prims.forEach((p, i) => p.ends.forEach((e, k) => allEnds.push({ i, k, p: e.p })));
+  const attached = (i, k) => allEnds.some(e => e.i !== i && near(e.p, prims[i].ends[k].p));
+  // ---- Jonctions (tés, onglets, croix) entre tronçons droits
+  const pipes = prims.map((p, i) => ({ p, i })).filter(x => x.p.type === 'PIPE');
+  const Ro = (p) => (p.De || (p.Di || 0) * 1.15) / 2;
+  const cand = [];
+  for (let u = 0; u < pipes.length; u++) for (let w = u + 1; w < pipes.length; w++) {
+    const A = pipes[u].p, B = pipes[w].p;
+    if (V.len(V.cross(A.dir, B.dir)) < Math.sin(1 / DEG)) continue;
+    const ra = Ro(A), rb = Ro(B);
+    // Test rapide de boîtes
+    let skip = false; for (let k = 0; k < 3; k++) { const amin = Math.min(A.a[k], A.b[k]) - ra - rb, amax = Math.max(A.a[k], A.b[k]) + ra + rb; if (Math.max(B.a[k], B.b[k]) < amin || Math.min(B.a[k], B.b[k]) > amax) skip = true; } if (skip) continue;
+    // Points les plus proches des deux axes
+    const d1 = A.dir, d2 = B.dir, r = V.sub(A.a, B.a); const a = V.dot(d1, d1), b = V.dot(d1, d2), c = V.dot(d2, d2), d = V.dot(d1, r), e = V.dot(d2, r);
+    const den = a * c - b * b; if (Math.abs(den) < 1e-12) continue;
+    const s = (b * e - c * d) / den, t = (a * e - b * d) / den;
+    const pa = V.add(A.a, V.mul(d1, s)), pb = V.add(B.a, V.mul(d2, t));
+    if (V.dist(pa, pb) > Math.max(tol, 0.02 * Math.min(ra, rb))) continue;
+    const C = V.mul(V.add(pa, pb), 0.5);
+    const role = (P, idx, tt, m) => { if (tt > m && tt < P.L - m) return 'mid'; if (Math.abs(tt) <= m && !attached(idx, 0)) return 'end0'; if (Math.abs(tt - P.L) <= m && !attached(idx, 1)) return 'end1'; return null; };
+    const rA = role(A, pipes[u].i, s, rb * 1.15 + tol), rB = role(B, pipes[w].i, t, ra * 1.15 + tol);
+    if (!rA || !rB) continue;
+    cand.push({ C, m: [[pipes[u].i, rA, s], [pipes[w].i, rB, t]], r: Math.min(ra, rb) });
+  }
+  const clusters = [];
+  for (const c of cand) { let k = clusters.find(k => V.dist(k.C, c.C) < Math.max(tol, 0.1 * c.r)); if (!k) { k = { C: c.C, m: [] }; clusters.push(k); } for (const m of c.m) if (!k.m.some(x => x[0] === m[0])) k.m.push(m); }
+  // Découpage des tronçons aux points de jonction
+  const cuts = new Map();
+  for (const k of clusters) for (const [i, role, t] of k.m) { if (!cuts.has(i)) cuts.set(i, []); cuts.get(i).push({ role, t, C: k.C }); }
+  const newPrims = [];
+  prims.forEach((p, i) => {
+    if (!cuts.has(i)) { newPrims.push(p); return; }
+    const cs = cuts.get(i); const pts = [];
+    const e0 = cs.find(c => c.role === 'end0'), e1 = cs.find(c => c.role === 'end1');
+    pts.push(e0 ? { t: e0.t, P: e0.C } : { t: 0, P: p.a });
+    for (const c of cs.filter(c => c.role === 'mid').sort((x, y) => x.t - y.t)) pts.push({ t: c.t, P: c.C });
+    pts.push(e1 ? { t: e1.t, P: e1.C } : { t: p.L, P: p.b });
+    for (let j = 0; j + 1 < pts.length; j++) {
+      const L = pts[j + 1].t - pts[j].t; if (L < tol) continue;
+      const q = Object.assign({}, p, { a: pts[j].P, b: pts[j + 1].P, L: V.dist(pts[j].P, pts[j + 1].P), cutFrom: true });
+      q.ends = ends(q); newPrims.push(q);
+    }
+  });
+  prims = newPrims;
+  // ---- Nœuds par coïncidence des extrémités (grille + union-find)
+  const E = []; prims.forEach((p, i) => p.ends.forEach((e, k) => E.push({ prim: i, k, p: e.p, out: e.out })));
+  const parent = E.map((_, i) => i); const find = (x) => { while (parent[x] !== x) x = parent[x] = parent[parent[x]]; return x; };
+  const cell = Math.max(tol, 1e-6); const grid = new Map(); const key = (p) => p.map(v => Math.floor(v / cell)).join(',');
+  E.forEach((e, i) => { const k = key(e.p); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(i); });
+  E.forEach((e, i) => {
+    const c = e.p.map(v => Math.floor(v / cell));
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) for (const j of grid.get([c[0] + dx, c[1] + dy, c[2] + dz].join(',')) || []) if (j > i && near(e.p, E[j].p)) parent[find(i)] = find(j);
+  });
+  const nodeMap = new Map(); const nodes = [];
+  E.forEach((e, i) => { const r = find(i); if (!nodeMap.has(r)) { nodeMap.set(r, nodes.length); nodes.push({ pts: [], atts: [] }); } const n = nodes[nodeMap.get(r)]; n.pts.push(e.p); n.atts.push({ c: e.prim, k: e.k, out: e.out }); e.node = nodeMap.get(r); });
+  for (const n of nodes) n.p = V.mul(n.pts.reduce((s, p) => V.add(s, p), [0, 0, 0]), 1 / n.pts.length);
+  // Composants
+  const comps = prims.map((p, i) => ({ kind: p.type, prim: p, nodes: [null, null] }));
+  E.forEach(e => { comps[e.prim].nodes[e.k] = e.node; });
+  // ---- Équipements : raccordement aux extrémités libres situées dans leur boîte englobante
+  const eqBodies = bodies.filter(b => b.cls !== 'Tuyauterie' && b.cls !== 'Ignorer');
+  const unknownBodies = bodies.filter(b => b.cls === 'Tuyauterie' && b.nPrims === 0 && b.faces.length);
+  const inBox = (p, bb, m) => p[0] >= bb[0] - m && p[1] >= bb[1] - m && p[2] >= bb[2] - m && p[0] <= bb[3] + m && p[1] <= bb[4] + m && p[2] <= bb[5] + m;
+  const freeNodes = () => nodes.map((n, i) => i).filter(i => nodes[i].atts.length === 1 && !nodes[i].eq);
+  const portDiam = (b, n) => {
+    const at = n.atts[0]; const dir = at.out; let best = null;
+    for (const f of b.faces) {
+      if (f.st !== 'CYL' || (b.solid && f.sense)) continue;
+      if (V.len(V.cross(f.z, dir)) > Math.sin(2 / DEG)) continue;
+      const off = V.len(V.cross(V.sub(n.p, f.o), f.z)); if (off > Math.max(tol, 0.05 * f.r)) continue;
+      let dmin = Infinity; for (const p of f.pts) dmin = Math.min(dmin, Math.abs(V.dot(V.sub(p, n.p), f.z)));
+      if (!best || dmin < best.d) best = { d: dmin, D: 2 * f.r, src: src(f) };
+    }
+    return best;
+  };
+  const attachEq = (b, typ, unknown) => {
+    const m = Math.max(2 * tol, 0.5);
+    const ports = freeNodes().filter(i => inBox(nodes[i].p, b.bbox, m));
+    const comp = { kind: 'EQ', body: b.idx, eqType: typ, unknown, nodes: ports, ports: [] };
+    for (const i of ports) {
+      const n = nodes[i]; const pd = portDiam(b, n); const pc = comps[n.atts[0].c].prim;
+      comp.ports.push({ node: i, D: pd ? pd.D : (pc.Di != null ? pc.Di : null), src: pd ? pd.src : null, pipeD: pc.Di });
+      n.eq = true; n.atts.push({ c: comps.length, k: comp.ports.length - 1, out: V.mul(n.atts[0].out, -1), eq: true });
+    }
+    comps.push(comp); return comp;
+  };
+  for (const b of eqBodies) { const c = attachEq(b, b.cls, false); if (!c.nodes.length) alerts.push({ lvl: 'warn', msg: `Équipement « ${b.name} » (${b.cls}) : aucun tube raccordé détecté (aucune extrémité libre dans sa boîte englobante). Augmentez la tolérance ou vérifiez la maquette.` }); }
+  for (const b of unknownBodies) {
+    const m = Math.max(2 * tol, 0.5); const has = freeNodes().some(i => inBox(nodes[i].p, b.bbox, m));
+    if (has) { attachEq(b, 'Équipement (autre)', true); alerts.push({ lvl: 'warn', msg: `Corps non reconnu « ${b.name || '#' + b.brep} » raccordé au réseau : inséré comme boîte noire de type « à identifier ».` }); }
+    else if (!b.unnamedBolt) alerts.push({ lvl: 'info', msg: `Corps « ${b.name || '#' + b.brep} » : aucune primitive de tuyauterie reconnue (${b.faces.length} faces), ignoré.` });
+  }
+  // ---- Composants de longueur nulle aux nœuds : tés, croix, onglets, variations brusques
+  const Dat = (att) => { const c = comps[att.c]; if (c.kind === 'EQ') return c.ports[att.k] ? c.ports[att.k].D : null; const p = c.prim; if (p.type === 'RED') return att.k === 0 ? (p.Da != null ? p.Da : p.Dea) : (p.Db != null ? p.Db : p.Deb); return p.Di != null ? p.Di : p.De; };
+  const splitNode = (ni, comp) => {
+    const n = nodes[ni]; const ids = [];
+    n.atts.forEach((att, j) => {
+      const nid = j === 0 ? ni : nodes.length; if (j > 0) nodes.push({ p: n.p.slice(), atts: [att], split: true });
+      const c = comps[att.c]; c.nodes[att.k] = nid; if (c.kind === 'EQ' && c.ports[att.k]) c.ports[att.k].node = nid; ids.push(nid);
+    });
+    n.atts = [n.atts[0]];
+    const ci = comps.length; comp.nodes = ids; comps.push(comp);
+    ids.forEach((nid, j) => nodes[nid].atts.push({ c: ci, k: j, zero: true }));
+  };
+  const N0 = nodes.length;
+  for (let ni = 0; ni < N0; ni++) {
+    const n = nodes[ni]; const at = n.atts.slice(); const deg = at.length;
+    if (deg >= 3) {
+      const arms = at.map(a => ({ D: Dat(a), out: a.out, c: a.c }));
+      let best = null; for (let i = 0; i < 3 && i < arms.length; i++) for (let j = i + 1; j < arms.length; j++) { const an = V.angle(arms[i].out, arms[j].out); if (!best || an > best.an) best = { i, j, an }; }
+      const comp = { kind: deg === 3 ? 'TEE' : 'JCT', arms, main: [best.i, best.j], p: n.p };
+      if (deg === 3) { const k = [0, 1, 2].find(x => x !== best.i && x !== best.j); comp.branch = k; const mainDir = V.sub(arms[best.j].out, arms[best.i].out); let ang = V.angle(arms[k].out, mainDir) * DEG; if (ang > 90) ang = 180 - ang; comp.angle = ang; comp.colin = best.an * DEG; }
+      else alerts.push({ lvl: 'warn', msg: `Jonction à ${deg} branches détectée : à modéliser manuellement (croix ou collecteur).` });
+      splitNode(ni, comp);
+    } else if (deg === 2) {
+      const [a, b] = at; const ca = comps[a.c], cb = comps[b.c];
+      if (ca.kind === 'EQ' || cb.kind === 'EQ') continue;
+      const defl = V.angle(a.out, V.mul(b.out, -1)) * DEG;
+      const Da = Dat(a), Db = Dat(b);
+      if (defl > 1 && ca.kind === 'PIPE' && cb.kind === 'PIPE') {
+        splitNode(ni, { kind: 'MITRE', angle: defl, D: Math.min(Da || Infinity, Db || Infinity), p: n.p, Da, Db });
+        if (Da && Db && Math.abs(Da - Db) / Math.max(Da, Db) > 0.01) alerts.push({ lvl: 'warn', msg: 'Coude à onglet avec changement de diamètre : vérifier.' });
+      } else if (Da && Db && Math.abs(Da - Db) / Math.max(Da, Db) > 0.01) {
+        splitNode(ni, { kind: 'SUDDEN', Da, Db, p: n.p });
+      } else if (defl > 1) alerts.push({ lvl: 'warn', msg: `Discontinuité de tangence de ${defl.toFixed(1)}° entre deux éléments (nœud à ${n.p.map(v => v.toFixed(1)).join(', ')} mm).` });
+    }
+  }
+  // ---- Numérotation stable (parcours en profondeur depuis l'extrémité libre la plus basse/ordonnée)
+  const vax = S.vertical || 'Z+'; const vi = 'XYZ'.indexOf(vax[0]); const vs = vax[1] === '-' ? -1 : 1;
+  const nodeComps = nodes.map(() => []); comps.forEach((c, ci) => c.nodes.forEach((ni, k) => { if (ni != null) nodeComps[ni].push({ ci, k }); }));
+  const coordKey = (p) => p.map(v => Math.round(v * 100) / 100);
+  const lex = (a, b) => { const A = coordKey(a), B = coordKey(b); for (let k = 0; k < 3; k++) if (A[k] !== B[k]) return A[k] - B[k]; return 0; };
+  const order = nodes.map((n, i) => i).sort((a, b) => { const fa = nodeComps[a].length === 1 ? 0 : 1, fb = nodeComps[b].length === 1 ? 0 : 1; if (fa !== fb) return fa - fb; return lex(nodes[a].p, nodes[b].p); });
+  const nodeId = new Array(nodes.length).fill(null); const compSeen = new Array(comps.length).fill(false); const compOrder = [];
+  let nCount = 0; let sub = 0;
+  for (const start of order) {
+    if (nodeId[start] != null) continue; sub++;
+    const st = [start];
+    while (st.length) {
+      const ni = st.pop(); if (nodeId[ni] == null) { nodeId[ni] = ++nCount; nodes[ni].sub = sub; }
+      const nxt = [];
+      const cs = nodeComps[ni].slice().sort((x, y) => { const cx = comps[x.ci], cy = comps[y.ci]; const px = cx.nodes.map(i => nodes[i] ? nodes[i].p : [0, 0, 0]), py = cy.nodes.map(i => nodes[i] ? nodes[i].p : [0, 0, 0]); return lex(px.reduce((s, p) => V.add(s, p), [0, 0, 0]), py.reduce((s, p) => V.add(s, p), [0, 0, 0])); });
+      for (const { ci, k } of cs) {
+        if (compSeen[ci]) continue; compSeen[ci] = true; compOrder.push(ci); comps[ci].fromNode = ni; comps[ci].sub = sub;
+        // Orientation : le nœud d'arrivée devient « amont »
+        const c = comps[ci];
+        if ((c.kind === 'PIPE' || c.kind === 'BEND' || c.kind === 'RED') && k === 1) c.reversed = true;
+        for (const nj of c.nodes) if (nj != null && nodeId[nj] == null) nxt.push(nj);
+      }
+      for (let j = nxt.length - 1; j >= 0; j--) st.push(nxt[j]);
+    }
+  }
+  comps.forEach((c, ci) => { if (!compSeen[ci]) { compOrder.push(ci); c.sub = 0; } });
+  const prefix = { PIPE: 'P', BEND: 'B', MITRE: 'B', RED: 'R', SUDDEN: 'R', TEE: 'T', JCT: 'J', EQ: 'EQ' };
+  const counters = {}; const pad = (n) => String(n).padStart(3, '0');
+  for (const ci of compOrder) { const c = comps[ci]; const pf = prefix[c.kind]; counters[pf] = (counters[pf] || 0) + 1; c.id = pf + pad(counters[pf]); }
+  // Topologie : boucles = E - V + C (hubs pour composants ≠ 2 nœuds)
+  let Vn = nodes.length, En = 0; for (const c of comps) { const k = c.nodes.filter(x => x != null).length; if (k === 2) En++; else if (k > 0) { Vn++; En += k; } }
+  const subs = sub; const loops = En - Vn + subs;
+  // ---- Sérialisation du modèle
+  const nid = (i) => i == null ? null : 'N' + pad(nodeId[i]);
+  const outNodes = nodes.map((n, i) => ({ i, id: nid(i), p: n.p, deg: nodeComps[i].length, sub: n.sub, eq: !!n.eq, split: !!n.split })).sort((a, b) => nodeId[a.i] - nodeId[b.i]);
+  const outComps = compOrder.map(ci => {
+    const c = comps[ci]; const o = { id: c.id, kind: c.kind, sub: c.sub };
+    let ns = c.nodes.slice(); if (c.reversed) ns = ns.slice().reverse();
+    o.nodes = ns.map(nid);
+    if (c.prim) {
+      const p = c.prim; o.body = p.body; o.bodyName = bodies[p.body].name;
+      for (const k of ['Di', 'De', 'diSrc', 'deSrc', 'odOnly', 'idOnly', 'L', 'src', 'R', 'theta', 'angle', 'faceIds']) if (p[k] !== undefined) o[k] = p[k];
+      const pa = c.reversed ? p.b : p.a, pb = c.reversed ? p.a : p.b; o.a = pa; o.b = pb;
+      if (p.cutFrom) o.cut = true;
+      if (p.type === 'BEND') { o.C = p.C; o.n = p.n; o.ex = p.ex; o.ey = p.ey; o.phi0 = p.phi0; o.sub2 = 'cintré'; }
+      if (p.type === 'RED') { o.D1 = c.reversed ? p.Db : p.Da; o.D2 = c.reversed ? p.Da : p.Db; o.De1 = c.reversed ? p.Deb : p.Dea; o.De2 = c.reversed ? p.Dea : p.Deb; o.diSrc = p.diSrc; o.deSrc = p.deSrc; o.single = !!p.single; o.odOnly = !!p.odOnly; o.sub2 = 'progressive'; }
+    }
+    if (c.kind === 'MITRE') { o.kind = 'BEND'; o.sub2 = 'onglet'; o.theta = c.angle; o.R = 0; o.Di = c.D; o.p = c.p; o.L = 0; }
+    if (c.kind === 'SUDDEN') { o.kind = 'RED'; o.sub2 = 'brusque'; const fr = nodes[c.nodes[0]]; o.D1 = c.Da; o.D2 = c.Db; o.angle = 180; o.L = 0; o.p = c.p; }
+    if (c.kind === 'TEE' || c.kind === 'JCT') {
+      o.p = c.p; o.arms = c.arms.map((a, j) => ({ node: nid(c.nodes[j]), D: a.D, dir: a.out }));
+      o.main = c.main; o.branch = c.branch; o.angle = c.angle;
+    }
+    if (c.kind === 'EQ') { const b = bodies[c.body]; o.body = c.body; o.bodyName = b.name; o.eqType = c.eqType; o.unknown = c.unknown; o.kw = b.kw; o.bbox = b.bbox; o.ports = c.ports.map(pt => ({ node: nid(pt.node), D: pt.D, src: pt.src, pipeD: pt.pipeD })); o.nodes = o.ports.map(pt => pt.node); }
+    return o;
+  });
+  // Alertes topologiques
+  const free = outNodes.filter(n => n.deg === 1);
+  for (let i = 0; i < free.length; i++) for (let j = i + 1; j < free.length; j++) { const d = V.dist(free[i].p, free[j].p); if (d <= Math.max(5, 20 * tol) && d > tol) alerts.push({ lvl: 'warn', msg: `Extrémités libres proches non raccordées : ${free[i].id} ↔ ${free[j].id} (${d.toFixed(2)} mm). Augmenter la tolérance de raccordement ?` }); }
+  if (subs > 1) alerts.push({ lvl: 'warn', msg: `${subs} sous-réseaux déconnectés détectés.` });
+  const odOnly = outComps.filter(c => c.odOnly).length; if (odOnly) alerts.push({ lvl: 'warn', msg: `${odOnly} composant(s) modélisé(s) avec le seul diamètre extérieur : épaisseur et Di proposés « par défaut ».` });
+  for (const b of bodies) if (b.unnamed && (b.nPrims || b.cls !== 'Tuyauterie')) alerts.push({ lvl: 'info', msg: `Pièce non nommée ou nom générique : « ${b.name || '(vide)'} » (#${b.brep}).` });
+  for (const b of bodies) if (b.cls !== 'Tuyauterie' && b.cls !== 'Ignorer' && b.kw) alerts.push({ lvl: 'info', msg: `Corps « ${b.name} » classé ${b.cls} (mot-clé « ${b.kw} »).` });
+  const unit = res.unitSeen; const unitFound = unit.some(([k]) => k !== 'non trouvée');
+  if (!unitFound && (!S.unitOverride || S.unitOverride === 'auto')) alerts.push({ lvl: 'err', msg: "Unité de longueur introuvable dans le STEP : millimètre utilisé PAR DÉFAUT. Choisissez l'unité dans les réglages." });
+  if (unit.length > 1) alerts.push({ lvl: 'warn', msg: 'Plusieurs unités de longueur dans le fichier : ' + unit.map(u => u[0]).join(', ') + ' (converties par contexte).' });
+  return {
+    header: db.header, nEntities: db.raw.size, unit: unit.map(u => u[0]).join(', ') || 'non trouvée', angUnit: res.angSeen.join(', '),
+    bodies: bodies.map(b => ({ idx: b.idx, key: b.key, name: b.name, path: b.path, brep: b.brep, solid: b.solid, counts: b.counts, cls: b.cls, autoClass: b.autoClass, kw: b.kw, nPrims: b.nPrims, notes: b.notes, bbox: b.bbox, mode: b.mode, unnamed: b.unnamed, nFaces: b.faces.length })),
+    nodes: outNodes.map(n => ({ id: n.id, p: n.p, deg: n.deg, sub: n.sub, eq: n.eq, split: n.split })), comps: outComps, alerts,
+    topo: { nodes: outNodes.length, comps: outComps.length, free: free.length, loops, subs }, ms: Date.now() - t0
+  };
+}
+
+
+
+</script>
+<!-- ===== Données de référence, export xlsx, application ===== -->
+<script>
+/* =====================================================================
+   DONNÉES DE RÉFÉRENCE
+   - REF : référentiel des données d'entrée Flowmaster (livrable 1)
+     Besoin par analyse : B = bloquant, P = améliore la précision, '' = non utilisé
+     Origine possible : a = extrait du STEP, b = calculé, c = défaut sourcé, d = saisie utilisateur
+   - Matériaux, fluides, normes de tubes, coefficients K indicatifs (Crane TP-410)
+   ===================================================================== */
+const ANALYSES = { P: 'Permanent incompressible', T: 'Transitoire (coup de bélier)', Th: 'Thermique couplée', C: 'Compressible (extension)' };
+const ORIGINS = { a: 'Extrait STEP', b: 'Calculé', c: 'Par défaut (source)', d: 'Saisie utilisateur' };
+const REF = [
+  // composant, paramètre, nom Flowmaster, unité, P, T, Th, C, origine, méthode
+  ['Tube', 'Diamètre intérieur', 'Diameter', 'mm', 'B', 'B', 'B', 'B', 'a (c si De seul)', "Rayon du cylindre intérieur coaxial (CYLINDRICAL_SURFACE, face d'orientation inverse)"],
+  ['Tube', 'Longueur', 'Length', 'm', 'B', 'B', 'B', 'B', 'a', "Bornes des faces projetées sur l'axe ; mesurée jusqu'au point d'intersection des axes aux tés et onglets"],
+  ['Tube', 'Altitude des nœuds / dénivelé', 'Node elevation', 'm', 'B', 'B', 'P', 'B', 'a / b', "Coordonnée du nœud selon l'axe vertical choisi"],
+  ['Tube', 'Rugosité absolue', 'Absolute roughness', 'mm', 'B', 'B', 'P', 'B', 'c', 'Table matériau (Moody 1944 / Crane TP-410), modifiable'],
+  ['Tube', 'Diamètre extérieur', 'Outside diameter', 'mm', '', 'B', 'B', '', 'a', 'Rayon du cylindre extérieur coaxial'],
+  ['Tube', 'Épaisseur de paroi', 'Wall thickness', 'mm', '', 'B', 'B', '', 'b (c si De seul)', '(De − Di)/2 ; sinon classe normalisée ASME B36.10 / EN 10255 / EN 1057'],
+  ['Tube', 'Matériau', 'Material', '–', 'P', 'B', 'B', '', 'd', 'Défaut global modifiable par tube'],
+  ['Tube', "Module d'Young", "Young's modulus", 'GPa', '', 'B', '', '', 'c', 'Table matériau'],
+  ['Tube', 'Coefficient de Poisson', "Poisson's ratio", '–', '', 'B', '', '', 'c', 'Table matériau'],
+  ['Tube', 'Ancrage / supportage', 'Pipe constraint', '–', '', 'B', '', '', 'd', 'Ancré amont / ancré partout / joints de dilatation'],
+  ['Tube', 'Conductivité de paroi', 'Wall conductivity', 'W/(m·K)', '', '', 'B', '', 'c', 'Table matériau'],
+  ['Tube', "Isolant (épaisseur, conductivité)", 'Insulation', 'mm ; W/(m·K)', '', '', 'B', '', 'd', ''],
+  ['Tube', "Coefficient d'échange externe", 'External HTC', 'W/(m²·K)', '', '', 'B', '', 'd', ''],
+  ['Tube', 'Température ambiante', 'Ambient temperature', '°C', '', '', 'B', '', 'd', ''],
+  ['Coude', 'Diamètre intérieur', 'Diameter', 'mm', 'B', 'B', 'B', 'B', 'a', 'Rayon mineur du tore intérieur (TOROIDAL_SURFACE)'],
+  ['Coude', 'Rayon de cintrage', 'Bend radius', 'mm', 'B', 'P', 'P', 'B', 'a', 'Rayon majeur du tore ; 0 pour un coude à onglet'],
+  ['Coude', 'Rapport R/D', 'Radius ratio r/d', '–', 'B', 'P', '', 'B', 'b', 'R / Di'],
+  ['Coude', 'Angle', 'Bend angle', '°', 'B', 'P', '', 'B', 'a / b', "Azimuts balayés par les faces du tore ; angle entre axes pour un onglet"],
+  ['Coude', 'Longueur développée', 'Length', 'm', 'P', 'B', 'B', 'P', 'b', 'R × θ'],
+  ['Coude', 'Rugosité', 'Roughness', 'mm', 'P', 'P', '', 'P', 'c', 'Table matériau'],
+  ['Coude', 'Corrélation de pertes', 'Loss data source', '–', 'B', '', '', 'B', 'b (suggestion)', 'Miller : coude circulaire (R/D, θ, Re) ou onglet'],
+  ['Té', 'Diamètres des 3 bras', 'Arm diameters', 'mm', 'B', 'B', 'P', 'B', 'a', 'Di des primitives raccordées au point de jonction des axes'],
+  ['Té', 'Angle du piquage', 'Branch angle', '°', 'B', 'P', '', 'B', 'b', 'Angle entre axes'],
+  ['Té', 'Rapports de sections', 'Area ratios', '–', 'B', '', '', 'B', 'b', 'A_dérivé/A_principal, A_principal2/A_principal1'],
+  ['Té', 'Rayon de raccordement r/D', 'Junction radius ratio', '–', 'P', '', '', 'P', 'd', "Non extrait (congé d'intersection) ; 0 = arête vive"],
+  ['Té', 'Configuration (convergent/divergent)', 'Flow configuration', '–', 'P', '', '', 'P', 'd', "Dépend du sens réel d'écoulement, évalué par le solveur ; à confirmer"],
+  ['Variation de section', 'Diamètres D1 / D2', 'Diameters', 'mm', 'B', 'B', 'P', 'B', 'a', 'Rayons du cône intérieur aux bornes ou des cylindres adjacents'],
+  ['Variation de section', 'Angle de cône (total)', 'Cone angle', '°', 'B', 'P', '', 'B', 'a', '2 × demi-angle (CONICAL_SURFACE) ; 180° si brusque'],
+  ['Variation de section', 'Longueur', 'Length', 'mm', 'P', 'P', '', 'P', 'a', ''],
+  ['Variation de section', 'Type (brusque / progressive)', 'Type', '–', 'B', '', '', 'B', 'b', 'Cône présent ou non'],
+  ['Pompe', 'DN aspiration / refoulement', 'Inlet / outlet diameter', 'mm', 'P', 'P', '', 'P', 'a / b', 'Alésage de la tubulure ; sinon Di du tube raccordé'],
+  ['Pompe', 'Courbe H-Q (≥ 3 points)', 'Head vs flow', 'm ; m³/h', 'B', 'B', '', 'B', 'd', 'Fiche constructeur — jamais inventée'],
+  ['Pompe', 'Vitesse nominale', 'Speed', 'tr/min', 'B', 'B', '', 'B', 'd', ''],
+  ['Pompe', 'Courbe de rendement / puissance', 'Efficiency / power', '% ; kW', 'P', 'P', 'B', 'P', 'd', 'Échauffement du fluide en thermique'],
+  ['Pompe', 'NPSH requis', 'NPSHr', 'm', 'P', 'P', '', '', 'd', ''],
+  ['Pompe', 'Inertie rotor + moteur', 'Inertia', 'kg·m²', '', 'B', '', '', 'd', 'Démarrage / disjonction'],
+  ['Pompe', 'Loi de démarrage / arrêt', 'Start-up / trip', '–', '', 'B', '', '', 'd', ''],
+  ['Vanne', 'DN', 'Diameter', 'mm', 'P', 'P', '', 'P', 'a / b', ''],
+  ['Vanne', 'Kv, Cv ou K (fonction de l\'ouverture)', 'Loss coefficient', '–', 'B', 'B', '', 'B', 'd', 'Fiche constructeur'],
+  ['Vanne', 'Ouverture en régime permanent', 'Opening', '%', 'B', 'B', '', 'B', 'd', ''],
+  ['Vanne', 'Loi et temps de manœuvre', 'Opening vs time', 's', '', 'B', '', '', 'd', ''],
+  ['Clapet anti-retour', 'K ou ΔP-Q, pression d\'ouverture', 'Loss / cracking pressure', '– ; bar', 'B', 'B', '', 'B', 'd', ''],
+  ['Clapet anti-retour', 'Temps de fermeture / inertie', 'Closing time', 's', '', 'B', '', '', 'd', ''],
+  ['Filtre', 'Courbe ΔP-Q ou K', 'Pressure drop', 'bar ; m³/h', 'B', 'B', '', 'B', 'd', ''],
+  ['Filtre', 'État de colmatage', 'Clogging', '%', 'P', '', '', '', 'd', ''],
+  ['Échangeur', 'ΔP-Q côté circuit', 'Pressure drop', 'bar ; m³/h', 'B', 'B', 'P', 'B', 'd', ''],
+  ['Échangeur', 'Performance thermique (UA, efficacité ou puissance)', 'Heat transfer', 'W/K ; – ; kW', '', '', 'B', '', 'd', ''],
+  ['Échangeur', 'Côté secondaire (débit, T entrée)', 'Secondary side', 'kg/s ; °C', '', '', 'B', '', 'd', ''],
+  ['Échangeur', 'Volume interne', 'Volume', 'L', '', 'P', 'P', '', 'd', ''],
+  ['Réservoir', 'Niveau de liquide', 'Liquid height', 'm', 'B', 'B', 'P', 'B', 'd', ''],
+  ['Réservoir', 'Pression du ciel gazeux', 'Surface pressure', 'bar abs', 'B', 'B', '', 'B', 'd', ''],
+  ['Réservoir', 'Section / volume', 'Cross-section area', 'm²', '', 'B', 'P', '', 'd', ''],
+  ['Réservoir', 'Altitude du fond', 'Base elevation', 'm', 'P', 'P', '', 'P', 'b', 'Boîte englobante du corps'],
+  ['Débitmètre', 'K ou ΔP-Q', 'Loss coefficient', '–', 'P', 'P', '', 'P', 'd', ''],
+  ['Orifice / diaphragme', "Diamètre d'orifice, épaisseur", 'Orifice diameter', 'mm', 'B', 'B', '', 'B', 'd', ''],
+  ['Fluide', 'Masse volumique', 'Density', 'kg/m³', 'B', 'B', 'B', 'B', 'c / d', 'Bibliothèque (source citée) ou saisie'],
+  ['Fluide', 'Viscosité dynamique', 'Dynamic viscosity', 'Pa·s', 'B', 'B', 'B', 'B', 'c / d', ''],
+  ['Fluide', 'Capacité thermique massique', 'Specific heat', 'J/(kg·K)', '', '', 'B', 'B', 'c / d', ''],
+  ['Fluide', 'Conductivité thermique', 'Thermal conductivity', 'W/(m·K)', '', '', 'B', '', 'c / d', ''],
+  ['Fluide', 'Module de compressibilité', 'Bulk modulus', 'GPa', '', 'B', '', '', 'c / d', ''],
+  ['Fluide', 'Pression de vapeur saturante', 'Vapour pressure', 'kPa', 'P', 'B', '', '', 'c / d', 'Cavitation, NPSH disponible'],
+  ['Fluide', 'Constante du gaz, γ', 'Gas constant, γ', 'J/(kg·K) ; –', '', '', '', 'B', 'c / d', ''],
+  ['Fluide', 'Température et pression de référence', 'Reference T, P', '°C ; bar', 'B', 'B', 'B', 'B', 'd', ''],
+  ['Conditions aux limites', 'Type et valeur par extrémité libre', 'Pressure / flow source, reservoir', 'bar ; m³/h ; m', 'B', 'B', 'B', 'B', 'd', ''],
+  ['Conditions aux limites', "Température d'entrée", 'Source temperature', '°C', '', '', 'B', 'B', 'd', ''],
+  ['Simulation', 'Pas de temps', 'Time step', 's', '', 'B', '', '', 'd (b : suggestion ≤ L/a)', 'Vitesse d\'onde calculée si données disponibles'],
+  ['Simulation', 'Durée simulée', 'Simulation time', 's', '', 'B', '', '', 'd', ''],
+  ['Simulation', 'Lois temporelles / événements', 'Time-dependent controllers', '–', '', 'B', '', '', 'd', ''],
+  ['Thermique', 'Sources de chaleur', 'Heat sources', 'W', '', '', 'P', '', 'd', ''],
+  ['Contrôle', 'Débit nominal', '—', 'm³/h', 'P', '', '', '', 'd', 'Uniquement pour le contrôle de vraisemblance']
+];
+
+/* Paramètres propres à chaque type d'équipement (onglet Équipements) */
+const EQ_PARAMS = {
+  'Pompe': [['hq', 'Courbe H-Q (Q m³/h : H m ; …)', 'Head vs flow', 'm³/h : m', { P: 'B', T: 'B', C: 'B' }], ['speed', 'Vitesse nominale', 'Speed', 'tr/min', { P: 'B', T: 'B', C: 'B' }], ['eff', 'Rendement (ou courbe P-Q)', 'Efficiency', '%', { P: 'P', T: 'P', Th: 'B' }], ['npsh', 'NPSH requis', 'NPSHr', 'm', { P: 'P', T: 'P' }], ['inertia', 'Inertie rotor + moteur', 'Inertia', 'kg·m²', { T: 'B' }], ['startup', 'Loi de démarrage / arrêt', 'Start-up / trip', '–', { T: 'B' }]],
+  'Vanne': [['kv', 'Kv, Cv ou K (préciser)', 'Loss coefficient / Kv', '–', { P: 'B', T: 'B', C: 'B' }], ['open', 'Ouverture en régime permanent', 'Opening', '%', { P: 'B', T: 'B', C: 'B' }], ['law', "Loi d'ouverture / fermeture", 'Opening vs time', '–', { T: 'B' }], ['tman', 'Temps de manœuvre', 'Operating time', 's', { T: 'B' }]],
+  'Clapet anti-retour': [['kv', 'K ou ΔP-Q', 'Loss coefficient', '–', { P: 'B', T: 'B', C: 'B' }], ['pcrack', "Pression d'ouverture", 'Cracking pressure', 'bar', { P: 'P', T: 'P' }], ['tclose', 'Temps de fermeture / inertie', 'Closing time', 's', { T: 'B' }]],
+  'Filtre': [['dpq', 'Courbe ΔP-Q (Q m³/h : ΔP bar ; …) ou K', 'Pressure drop vs flow', 'm³/h : bar', { P: 'B', T: 'B', C: 'B' }], ['clog', 'État de colmatage retenu', 'Clogging', '%', { P: 'P' }]],
+  'Échangeur': [['dpq', 'ΔP-Q côté circuit', 'Pressure drop vs flow', 'm³/h : bar', { P: 'B', T: 'B', Th: 'P', C: 'B' }], ['ua', 'Performance thermique (UA, efficacité ou puissance)', 'Heat transfer', 'W/K ; – ; kW', { Th: 'B' }], ['sec', 'Côté secondaire (débit ; T entrée)', 'Secondary side', 'kg/s ; °C', { Th: 'B' }], ['vol', 'Volume interne', 'Volume', 'L', { T: 'P', Th: 'P' }]],
+  'Réservoir': [['level', 'Niveau de liquide', 'Liquid height', 'm', { P: 'B', T: 'B', Th: 'P', C: 'B' }], ['psurf', 'Pression du ciel gazeux', 'Surface pressure', 'bar abs', { P: 'B', T: 'B', C: 'B' }], ['area', 'Section du réservoir', 'Cross-section area', 'm²', { T: 'B', Th: 'P' }]],
+  'Débitmètre': [['k', 'K ou ΔP-Q', 'Loss coefficient', '–', { P: 'P', T: 'P', C: 'P' }]],
+  'Orifice / diaphragme': [['dor', "Diamètre d'orifice", 'Orifice diameter', 'mm', { P: 'B', T: 'B', C: 'B' }], ['tor', 'Épaisseur / type de bord', 'Thickness / edge', 'mm', { P: 'P' }]],
+  'Équipement (autre)': [['type', 'Type réel à identifier', 'Component type', '–', { P: 'B', T: 'B', Th: 'B', C: 'B' }], ['dpq', 'Caractéristique ΔP-Q ou K', 'Pressure drop vs flow', '–', { P: 'B', T: 'B', C: 'B' }]]
+};
+
+/* Matériaux : rugosité (mm) + source, E (GPa), ν, λ (W/(m·K)) — valeurs usuelles à confirmer selon la nuance */
+const MATERIALS = [
+  ['Acier carbone commercial neuf', 0.045, 'Moody (1944) / Crane TP-410', 207, 0.30, 50],
+  ['Acier carbone légèrement corrodé', 0.15, "Idel'chik, valeur usuelle", 207, 0.30, 50],
+  ['Acier galvanisé', 0.15, 'Moody (1944)', 207, 0.30, 50],
+  ['Acier inoxydable, tube étiré', 0.0015, 'Moody (1944), tube étiré', 193, 0.30, 16],
+  ['Acier inoxydable, tube soudé', 0.045, 'Crane TP-410 (assimilé acier commercial)', 193, 0.30, 16],
+  ['Cuivre étiré', 0.0015, 'Moody (1944), tube étiré', 117, 0.33, 390],
+  ['Aluminium étiré', 0.0015, 'Moody (1944), tube étiré', 69, 0.33, 205],
+  ['Titane, tube étiré', 0.0015, 'Moody (1944), tube étiré', 110, 0.32, 7],
+  ['Fonte', 0.26, 'Moody (1944)', 100, 0.26, 50],
+  ['PVC', 0.0015, 'Moody (1944), surfaces lisses', 3.0, 0.40, 0.19],
+  ['PEHD', 0.0015, 'Moody (1944), surfaces lisses', 1.0, 0.45, 0.40]
+];
+const MAT = Object.fromEntries(MATERIALS.map(m => [m[0], { eps: m[1], src: m[2], E: m[3], nu: m[4], k: m[5] }]));
+
+/* Fluides : propriétés en fonction de T (°C). Retourne {rho kg/m³, mu Pa·s, cp J/(kg·K), lam W/(m·K), K GPa, pv kPa, src} ; null = non fourni */
+function interp(tab, T, col) {
+  if (T <= tab[0][0]) return tab[0][col]; const l = tab[tab.length - 1]; if (T >= l[0]) return l[col];
+  for (let i = 1; i < tab.length; i++) if (T <= tab[i][0]) { const a = tab[i - 1], b = tab[i]; return a[col] + (b[col] - a[col]) * (T - a[0]) / (b[0] - a[0]); }
+}
+// T °C | ρ | μ mPa·s | cp kJ/(kg·K) | λ | K GPa | pv kPa
+const WATER = [[0, 999.8, 1.792, 4.217, 0.561, 1.97, 0.611], [10, 999.7, 1.306, 4.192, 0.580, 2.09, 1.228], [20, 998.2, 1.002, 4.182, 0.598, 2.18, 2.339], [30, 995.7, 0.798, 4.178, 0.615, 2.25, 4.247], [40, 992.2, 0.653, 4.179, 0.631, 2.28, 7.384], [50, 988.0, 0.547, 4.181, 0.644, 2.29, 12.35], [60, 983.2, 0.467, 4.185, 0.654, 2.28, 19.95], [70, 977.8, 0.404, 4.190, 0.663, 2.25, 31.20], [80, 971.8, 0.355, 4.196, 0.670, 2.21, 47.41], [90, 965.3, 0.315, 4.205, 0.675, 2.16, 70.18], [100, 958.4, 0.282, 4.216, 0.679, 2.09, 101.3]];
+const EG30 = [[-10, 1049, 4.5, 3.56, 0.437], [0, 1046, 3.14, 3.58, 0.447], [20, 1040, 1.86, 3.63, 0.468], [40, 1032, 1.22, 3.68, 0.484], [60, 1022, 0.87, 3.73, 0.496], [80, 1011, 0.66, 3.78, 0.503]];
+const EG50 = [[-20, 1080, 11.0, 3.20, 0.360], [0, 1072, 5.5, 3.28, 0.375], [20, 1062, 3.0, 3.36, 0.390], [40, 1050, 1.8, 3.44, 0.400], [60, 1037, 1.2, 3.52, 0.405], [80, 1022, 0.85, 3.60, 0.410]];
+function walther(T, T1, n1, T2, n2) { // ASTM D341 : log log(ν+0,7) = A − B log T(K)
+  const f = (n) => Math.log10(Math.log10(n + 0.7)); const x1 = Math.log10(T1 + 273.15), x2 = Math.log10(T2 + 273.15);
+  const B = (f(n1) - f(n2)) / (x2 - x1), A = f(n1) + B * x1; return Math.pow(10, Math.pow(10, A - B * Math.log10(T + 273.15))) - 0.7;
+}
+const FLUIDS = {
+  water: { name: 'Eau', range: [0, 100], f: (T) => ({ rho: interp(WATER, T, 1), mu: interp(WATER, T, 2) / 1000, cp: interp(WATER, T, 3) * 1000, lam: interp(WATER, T, 4), K: interp(WATER, T, 5), pv: interp(WATER, T, 6), src: 'Eau pure — valeurs tabulées IAPWS-IF97 (interpolation linéaire)' }) },
+  eg30: { name: 'Eau glycolée 30 % (éthylène glycol)', range: [-10, 80], f: (T) => ({ rho: interp(EG30, T, 1), mu: interp(EG30, T, 2) / 1000, cp: interp(EG30, T, 3) * 1000, lam: interp(EG30, T, 4), K: null, pv: null, src: 'ASHRAE Handbook Fundamentals, valeurs approchées — module et Pv non fournis' }) },
+  eg50: { name: 'Eau glycolée 50 % (éthylène glycol)', range: [-20, 80], f: (T) => ({ rho: interp(EG50, T, 1), mu: interp(EG50, T, 2) / 1000, cp: interp(EG50, T, 3) * 1000, lam: interp(EG50, T, 4), K: null, pv: null, src: 'ASHRAE Handbook Fundamentals, valeurs approchées — module et Pv non fournis' }) },
+  vg32: { name: 'Huile hydraulique minérale ISO VG 32', range: [-10, 100], f: (T) => { const rho = 870 * (1 - 0.00065 * (T - 15)); return { rho, mu: walther(T, 40, 32, 100, 5.4) * 1e-6 * rho, cp: 1880 + 3.6 * (T - 15), lam: 0.13, K: 1.6, pv: 0, src: 'Valeurs typiques (ISO 3448, Walther ASTM D341 : 32 cSt à 40 °C, 5,4 cSt à 100 °C) — à confirmer avec la fiche produit' }; } },
+  vg46: { name: 'Huile hydraulique minérale ISO VG 46', range: [-10, 100], f: (T) => { const rho = 875 * (1 - 0.00065 * (T - 15)); return { rho, mu: walther(T, 40, 46, 100, 6.8) * 1e-6 * rho, cp: 1880 + 3.6 * (T - 15), lam: 0.13, K: 1.6, pv: 0, src: 'Valeurs typiques (ISO 3448, Walther ASTM D341 : 46 cSt à 40 °C, 6,8 cSt à 100 °C) — à confirmer avec la fiche produit' }; } },
+  jet: { name: 'Kérosène Jet A-1', range: [-40, 60], f: (T) => { const rho = 800 * (1 - 0.00093 * (T - 15)); return { rho, mu: walther(T, -20, 4.0, 40, 1.3) * 1e-6 * rho, cp: 2000, lam: 0.115, K: 1.4, pv: 1.0, src: 'Valeurs typiques (CRC Handbook of Aviation Fuel Properties) — ρ15 réel entre 775 et 840 kg/m³, à confirmer' }; } },
+  air: { name: 'Air (gaz parfait)', range: [-50, 200], gas: true, f: (T, Pbar) => { const Tk = T + 273.15; return { rho: Pbar * 1e5 / (287.05 * Tk), mu: 1.716e-5 * Math.pow(Tk / 273.15, 1.5) * (273.15 + 110.4) / (Tk + 110.4), cp: 1006, lam: 0.0241 * Math.pow(Tk / 273.15, 0.81), K: null, pv: null, R: 287.05, gamma: 1.4, src: 'Gaz parfait, Sutherland pour μ — écoulement compressible : extension optionnelle' }; } },
+  manual: { name: 'Propriétés saisies manuellement', range: null }
+};
+
+/* Épaisseurs normalisées pour un tube modélisé par son seul De : [De mm, e mm] */
+const PIPE_STD = {
+  ASME40: { name: 'ASME B36.10M Schedule 40', t: [[10.3, 1.73], [13.7, 2.24], [17.1, 2.31], [21.3, 2.77], [26.7, 2.87], [33.4, 3.38], [42.2, 3.56], [48.3, 3.68], [60.3, 3.91], [73.0, 5.16], [88.9, 5.49], [114.3, 6.02], [141.3, 6.55], [168.3, 7.11], [219.1, 8.18], [273.0, 9.27], [323.8, 10.31], [355.6, 11.13], [406.4, 12.70], [457.0, 14.27], [508.0, 15.09], [610.0, 17.48]] },
+  ASME80: { name: 'ASME B36.10M Schedule 80', t: [[10.3, 2.41], [13.7, 3.02], [17.1, 3.20], [21.3, 3.73], [26.7, 3.91], [33.4, 4.55], [42.2, 4.85], [48.3, 5.08], [60.3, 5.54], [73.0, 7.01], [88.9, 7.62], [114.3, 8.56], [141.3, 9.53], [168.3, 10.97], [219.1, 12.70], [273.0, 15.09], [323.8, 17.48], [355.6, 19.05], [406.4, 21.44], [457.0, 23.83], [508.0, 26.19], [610.0, 30.96]] },
+  ASME10: { name: 'ASME B36.19M Schedule 10S', t: [[10.3, 1.24], [13.7, 1.65], [17.1, 1.65], [21.3, 2.11], [26.7, 2.11], [33.4, 2.77], [42.2, 2.77], [48.3, 2.77], [60.3, 2.77], [73.0, 3.05], [88.9, 3.05], [114.3, 3.05], [141.3, 3.40], [168.3, 3.40], [219.1, 3.76], [273.0, 4.19], [323.8, 4.57]] },
+  EN10255: { name: 'EN 10255 série M (≤ 165,1) / EN 10220 (au-delà)', t: [[10.2, 2.0], [13.5, 2.3], [17.2, 2.3], [21.3, 2.6], [26.9, 2.6], [33.7, 3.2], [42.4, 3.2], [48.3, 3.2], [60.3, 3.6], [76.1, 3.6], [88.9, 4.0], [114.3, 4.5], [139.7, 5.0], [165.1, 5.0], [168.3, 4.5], [219.1, 6.3], [273.0, 6.3], [323.9, 7.1]] },
+  EN1057: { name: 'EN 1057 (tubes cuivre)', t: [[6, 1.0], [8, 1.0], [10, 1.0], [12, 1.0], [14, 1.0], [15, 1.0], [16, 1.0], [18, 1.0], [22, 1.0], [28, 1.0], [35, 1.2], [42, 1.2], [54, 1.5], [64, 2.0], [76.1, 2.0], [88.9, 2.0], [108, 2.5]] }
+};
+function stdThickness(De, std) {
+  const s = PIPE_STD[std]; if (!s) return null; let best = null;
+  for (const [d, e] of s.t) { const err = Math.abs(d - De); if (err <= Math.max(0.3, 0.01 * d) && (!best || err < best.err)) best = { err, e, d }; }
+  return best ? { e: best.e, src: s.name + ' — De ' + best.d + ' mm' } : null;
+}
+
+/* Coefficients K indicatifs (Crane TP-410, méthode K = fT·L/D) — contrôle de vraisemblance uniquement */
+const fT = (epsmm, Dmm) => 0.25 / Math.pow(Math.log10(epsmm / (3.7 * Dmm)), 2);
+const BEND_LD = [[1, 20], [1.5, 14], [2, 12], [3, 12], [4, 14], [6, 17], [8, 24], [10, 30], [12, 34], [14, 38], [16, 42], [20, 50]];
+const MITRE_LD = [[0, 2], [15, 4], [30, 8], [45, 15], [60, 25], [75, 40], [90, 60]];
+function KBend(rd, theta, ft) {
+  const LD = interp(BEND_LD, Math.max(1, rd), 1); const K1 = ft * LD; const n = theta / 90;
+  return (n - 1) * (0.25 * Math.PI * ft * rd + 0.5 * K1) + K1;
+}
+const KMitre = (theta, ft) => ft * interp(MITRE_LD, Math.min(90, theta), 1);
+function KRed(Dsmall, Dlarge, angleDeg, contraction) { // rapporté à la vitesse dans le petit diamètre
+  const b = Dsmall / Dlarge, t = Math.min(180, angleDeg) / DEG, s = Math.sin(t / 2), b2 = b * b;
+  if (contraction) return angleDeg <= 45 ? 0.8 * s * (1 - b2) : 0.5 * (1 - b2) * Math.sqrt(s);
+  return angleDeg <= 45 ? 2.6 * s * (1 - b2) * (1 - b2) : (1 - b2) * (1 - b2);
+}
+function colebrook(Re, rel) {
+  if (Re < 2300) return 64 / Re;
+  let f = 0.25 / Math.pow(Math.log10(rel / 3.7 + 5.74 / Math.pow(Re, 0.9)), 2);
+  for (let i = 0; i < 20; i++) f = Math.pow(-2 * Math.log10(rel / 3.7 + 2.51 / (Re * Math.sqrt(f))), -2);
+  return f;
+}
+const DEFAULT_KEYWORDS = `Pompe: POMPE, PUMP, CIRCULATEUR, CIRCULATOR
+Vanne: VANNE, VALVE, ROBINET, VLV
+Clapet anti-retour: CLAPET, CHECK_VALVE, NRV
+Filtre: FILTRE, FILTER, STRAINER, CREPINE
+Échangeur: ECHANGEUR, EXCHANGER, HX, RADIATEUR, RADIATOR, COOLER, REFROIDISSEUR
+Réservoir: RESERVOIR, TANK, BACHE, CUVE, VESSEL
+Débitmètre: DEBITMETRE, FLOWMETER, FLOW_METER
+Orifice / diaphragme: ORIFICE, DIAPHRAGME
+Ignorer: BOLT, BOULON, VIS, SCREW, ECROU, NUT, WASHER, RONDELLE, GOUJON, STUD, SUPPORT, COLLIER, CLAMP, BRACKET`;
+
+/* =====================================================================
+   GÉNÉRATEUR XLSX MINIMAL (archive ZIP non compressée + SpreadsheetML)
+   Aucune dépendance. Gère : styles par cellule, en-têtes figés, largeurs,
+   filtres automatiques, listes déroulantes (dataValidation), lignes de titre.
+   Feuille = { name, cols:[largeur], rows:[[cell]], freeze:n, header:n°ligne, filter:bool, lists:[{col, from, to, items}] }
+   Cellule = valeur simple ou { v, s:'hdr'|'STEP'|'CALC'|'DEF'|'USER'|'TODO'|'NA'|'txt'|'title'|'sub'|'wrap' }
+   ===================================================================== */
+const XLSX_STYLE = { '': 0, hdr: 1, STEP: 2, CALC: 3, DEF: 4, USER: 5, TODO: 6, NA: 7, txt: 8, title: 9, sub: 10, wrap: 11, INFO: 8 };
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files) { // files : [{name, data:Uint8Array}]
+  const enc = new TextEncoder(); const chunks = []; const central = []; let off = 0;
+  const u16 = (v) => [v & 255, (v >>> 8) & 255], u32 = (v) => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
+  for (const f of files) {
+    const nm = enc.encode(f.name); const crc = crc32(f.data); const sz = f.data.length;
+    const lh = new Uint8Array([...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(crc), ...u32(sz), ...u32(sz), ...u16(nm.length), ...u16(0)]);
+    chunks.push(lh, nm, f.data);
+    central.push(new Uint8Array([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(crc), ...u32(sz), ...u32(sz), ...u16(nm.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(off)]), nm);
+    off += lh.length + nm.length + sz;
+  }
+  const cdSize = central.reduce((s, c) => s + c.length, 0);
+  const end = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(cdSize), ...u32(off), ...u16(0)]);
+  return new Blob([...chunks, ...central, end], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+const xesc = (s) => String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const colName = (i) => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+function sheetXml(sh) {
+  const rows = sh.rows; let x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+  x += '<sheetViews><sheetView workbookViewId="0">';
+  if (sh.freeze) x += `<pane ySplit="${sh.freeze}" topLeftCell="A${sh.freeze + 1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft"/>`;
+  x += '</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>';
+  if (sh.cols && sh.cols.length) x += '<cols>' + sh.cols.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('') + '</cols>';
+  x += '<sheetData>';
+  rows.forEach((r, ri) => {
+    x += `<row r="${ri + 1}"${sh.header === ri + 1 ? ' ht="45" customHeight="1"' : ''}>`;
+    r.forEach((c, ci) => {
+      if (c === undefined || c === null || c === '') { return; }
+      const cell = (typeof c === 'object' && !(c instanceof Date)) ? c : { v: c };
+      const st = XLSX_STYLE[cell.s || ''] || 0; const ref = colName(ci) + (ri + 1);
+      const v = cell.v;
+      if (v === null || v === undefined || v === '') { if (st) x += `<c r="${ref}" s="${st}"/>`; return; }
+      if (typeof v === 'number' && isFinite(v)) x += `<c r="${ref}" s="${st}"><v>${v}</v></c>`;
+      else x += `<c r="${ref}" s="${st}" t="inlineStr"><is><t xml:space="preserve">${xesc(v)}</t></is></c>`;
+    });
+    x += '</row>';
+  });
+  x += '</sheetData>';
+  if (sh.filter && sh.header && rows[sh.header - 1]) x += `<autoFilter ref="A${sh.header}:${colName(rows[sh.header - 1].length - 1)}${Math.max(sh.header, rows.length)}"/>`;
+  const dv = (sh.lists || []).filter(l => l.to >= l.from);
+  if (dv.length) {
+    x += `<dataValidations count="${dv.length}">`;
+    for (const l of dv) { const f = l.ref ? l.ref : '"' + l.items.join(',').replace(/"/g, '') + '"'; x += `<dataValidation type="list" allowBlank="1" showErrorMessage="0" sqref="${colName(l.col)}${l.from}:${colName(l.col)}${l.to}"><formula1>${xesc(f.slice(0, 255))}</formula1></dataValidation>`; }
+    x += '</dataValidations>';
+  }
+  return x + '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/></worksheet>';
+}
+function buildXlsx(sheets) {
+  const enc = new TextEncoder(); const files = [];
+  const add = (n, s) => files.push({ name: n, data: enc.encode(s) });
+  add('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') + '</Types>');
+  add('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+  add('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>' + sheets.map((s, i) => `<sheet name="${xesc(s.name.slice(0, 31))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('') + '</sheets></workbook>');
+  add('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('') + `<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+  const fill = (rgb) => `<fill><patternFill patternType="solid"><fgColor rgb="FF${rgb}"/><bgColor indexed="64"/></patternFill></fill>`;
+  const b = '<border><left style="thin"><color rgb="FFBFBFBF"/></left><right style="thin"><color rgb="FFBFBFBF"/></right><top style="thin"><color rgb="FFBFBFBF"/></top><bottom style="thin"><color rgb="FFBFBFBF"/></bottom><diagonal/></border>';
+  const xf = (font, fillId, border, wrap, bold) => `<xf numFmtId="0" fontId="${font}" fillId="${fillId}" borderId="${border}" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"${wrap ? ' wrapText="1"' : ''}/></xf>`;
+  add('xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<fonts count="5"><font><sz val="10"/><name val="Calibri"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="14"/><color rgb="FF1F4E78"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FF1F4E78"/><name val="Calibri"/></font><font><i/><sz val="10"/><color rgb="FF7F7F7F"/><name val="Calibri"/></font></fonts>' +
+    '<fills count="10"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' + fill('1F4E78') + fill('C6EFCE') + fill('DDEBF7') + fill('FFEB9C') + fill('E4DFEC') + fill('FFC7CE') + fill('EDEDED') + fill('FFFFFF') + '</fills>' +
+    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>' + b + '</borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="12">' + '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>' + xf(1, 2, 1, true) + xf(0, 3, 1) + xf(0, 4, 1) + xf(0, 5, 1) + xf(0, 6, 1) + xf(0, 7, 1) + xf(4, 8, 1) + xf(0, 9, 1) + xf(2, 0, 0) + xf(3, 0, 0) + xf(0, 9, 1, true) + '</cellXfs>' +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
+  sheets.forEach((s, i) => add(`xl/worksheets/sheet${i + 1}.xml`, sheetXml(s)));
+  return zipStore(files);
+}
+
+/* =====================================================================
+   APPLICATION : état, matérialisation des valeurs (origine), interface,
+   vue 3D filaire, export Excel.
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const num = (x) => { if (x === null || x === undefined || x === '') return null; const v = parseFloat(String(x).replace(',', '.')); return isFinite(v) ? v : null; };
+const rnd = (v, n) => v == null ? null : Math.round(v * Math.pow(10, n)) / Math.pow(10, n);
+const fmt = (v, n = 2) => v == null || v === '' ? '' : (typeof v === 'number' ? v.toLocaleString('fr-FR', { maximumFractionDigits: n, minimumFractionDigits: 0 }) : String(v));
+
+const App = {
+  model: null, fileName: '', worker: null, sel: null, filter: 'Tous', showLabels: true, showTodo: true,
+  S: { tol: 0.1, vertical: 'Z+', unitOverride: 'auto', singleAs: 'OD', thkStd: 'ASME40', keywordsText: DEFAULT_KEYWORDS, bodyOverrides: {} },
+  F: { an: { P: true, T: false, Th: false, C: false }, fluid: 'water', T: 20, P: 1.013, man: { rho: '', mu: '', cp: '', lam: '', K: '', pv: '', R: '', gamma: '' }, mat: 'Acier carbone commercial neuf', matSet: false, epsGlobal: '', Q: '', anchor: '', dt: '', dur: '', events: '', Tin: '', h: '', Tamb: '', insE: '', insL: '', heat: '' },
+  ov: {}, bc: {}, eqType: {}
+};
+
+/* ---------- Besoins par paramètre (B bloquant, P précision) ---------- */
+const ALL = { P: 'B', T: 'B', Th: 'B', C: 'B' };
+const NEED = {
+  Di: ALL, L: ALL, dz: { P: 'B', T: 'B', Th: 'P', C: 'B' }, eps: { P: 'B', T: 'B', Th: 'P', C: 'B' }, De: { T: 'B', Th: 'B' }, e: { T: 'B', Th: 'B' }, mat: { P: 'P', T: 'B', Th: 'B' },
+  E: { T: 'B' }, nu: { T: 'B' }, anchor: { T: 'B' }, kw: { Th: 'B' }, insE: { Th: 'B' }, insL: { Th: 'B' }, h: { Th: 'B' }, Tamb: { Th: 'B' }, heat: { Th: 'P' },
+  R: { P: 'B', T: 'P', Th: 'P', C: 'B' }, RD: { P: 'B', T: 'P', C: 'B' }, theta: { P: 'B', T: 'P', C: 'B' }, Ldev: { P: 'P', T: 'B', Th: 'B', C: 'P' },
+  Darm: { P: 'B', T: 'B', Th: 'P', C: 'B' }, tang: { P: 'B', T: 'P', C: 'B' }, ratio: { P: 'B', C: 'B' }, rj: { P: 'P', C: 'P' }, cfg: { P: 'P', C: 'P' },
+  D12: { P: 'B', T: 'B', Th: 'P', C: 'B' }, cone: { P: 'B', T: 'P', C: 'B' }, Lred: { P: 'P', T: 'P', C: 'P' },
+  DN: { P: 'P', T: 'P', C: 'P' }, eqtype: ALL, zb: { P: 'P', T: 'P', C: 'P' },
+  rho: ALL, mu: ALL, cp: { Th: 'B', C: 'B' }, lam: { Th: 'B' }, K: { T: 'B' }, pv: { P: 'P', T: 'B' }, gR: { C: 'B' }, gamma: { C: 'B' }, Tref: ALL, Pref: ALL,
+  bc: ALL, bcv: ALL, Tin: { Th: 'B', C: 'B' }, dt: { T: 'B' }, dur: { T: 'B' }, events: { T: 'B' }, none: {}
+};
+function needLvl(need) { let l = null; for (const a in App.F.an) if (App.F.an[a] && need && need[a]) { if (need[a] === 'B') return 'B'; l = 'P'; } return l; }
+const mk = (key, v, o, s) => ({ v, o, s: s || '', need: NEED[key] || {} });
+const miss = (key, s) => { const need = NEED[key] || {}; const l = needLvl(need); return { v: null, o: l ? 'TODO' : 'NA', s: s || '', need, crit: l }; };
+const ORIG_LABEL = { STEP: 'Extrait STEP', CALC: 'Calculé', DEF: 'Par défaut', USER: 'Saisi utilisateur', TODO: 'À COMPLÉTER', NA: 'Non requis (analyse non cochée)', INFO: 'Information' };
+const origText = (x) => { if (!x) return ''; const b = ORIG_LABEL[x.o] || x.o; return x.s ? b + ' – ' + x.s : b; };
+
+/* ---------- Matérialisation : chaque valeur avec son origine ---------- */
+function altOf(p) { const v = App.S.vertical; const i = 'XYZ'.indexOf(v[0]); return (v[1] === '-' ? -1 : 1) * p[i] / 1000; }
+function fluidProps() {
+  const F = App.F; const fl = FLUIDS[F.fluid]; const out = {};
+  const keys = [['rho', 'Masse volumique (kg/m³) (Density)', 1], ['mu', 'Viscosité dynamique (Pa·s) (Dynamic viscosity)', 1], ['cp', 'Capacité thermique massique (J/(kg·K)) (Specific heat)', 1], ['lam', 'Conductivité thermique (W/(m·K)) (Thermal conductivity)', 1], ['K', 'Module de compressibilité (GPa) (Bulk modulus)', 1], ['pv', 'Pression de vapeur saturante (kPa) (Vapour pressure)', 1]];
+  if (fl.gas || App.F.an.C) keys.push(['gR', 'Constante du gaz (J/(kg·K)) (Gas constant)', 1], ['gamma', 'Rapport des capacités γ (–) (Ratio of specific heats)', 1]);
+  let lib = null; if (F.fluid !== 'manual') lib = fl.f(+F.T, +F.P);
+  for (const [k, label] of keys) {
+    const mv = num(F.man[k === 'gR' ? 'R' : k]);
+    if (mv != null) out[k] = mk(k, mv, 'USER');
+    else if (lib) { const lv = k === 'gR' ? lib.R : lib[k]; out[k] = lv != null ? mk(k, rnd(lv, k === 'mu' ? 9 : 4), 'DEF', lib.src + (fl.range && (F.T < fl.range[0] || F.T > fl.range[1]) ? ' — T HORS PLAGE ' + fl.range.join('…') + ' °C' : '')) : miss(k, 'non fourni par la bibliothèque'); }
+    else out[k] = miss(k);
+    out[k].label = label;
+  }
+  out.Tref = num(F.T) != null ? mk('Tref', +F.T, 'USER') : miss('Tref'); out.Tref.label = 'Température de référence (°C)';
+  out.Pref = num(F.P) != null ? mk('Pref', +F.P, 'USER') : miss('Pref'); out.Pref.label = 'Pression de référence (bar abs)';
+  return out;
+}
+function globalMat() { return App.F.matSet ? mk('mat', App.F.mat, 'USER', 'réglage global') : mk('mat', App.F.mat, 'DEF', "matériau par défaut de l'outil, à confirmer"); }
+function matVals(ov, Dref) {
+  const r = {};
+  r.mat = ov.mat ? mk('mat', ov.mat, 'USER') : globalMat();
+  const m = MAT[r.mat.v];
+  r.eps = num(ov.eps) != null ? mk('eps', +ov.eps, 'USER') : num(App.F.epsGlobal) != null ? mk('eps', +App.F.epsGlobal, 'USER', 'réglage global') : m ? mk('eps', m.eps, 'DEF', m.src + ' – ' + r.mat.v) : miss('eps');
+  r.epsRel = (r.eps.v != null && Dref) ? mk('none', rnd(r.eps.v / Dref, 7), 'CALC', 'ε / Di') : miss('none');
+  r.E = m ? mk('E', m.E, 'DEF', 'valeur usuelle – ' + r.mat.v) : miss('E');
+  r.nu = m ? mk('nu', m.nu, 'DEF', 'valeur usuelle – ' + r.mat.v) : miss('nu');
+  r.kw = m ? mk('kw', m.k, 'DEF', 'valeur usuelle – ' + r.mat.v) : miss('kw');
+  return r;
+}
+function globalOrMiss(key, ovv, gv, note) { if (num(ovv) != null || (ovv && key === 'anchor')) return mk(key, key === 'anchor' ? ovv : +ovv, 'USER'); if (num(gv) != null || (gv && key === 'anchor')) return mk(key, key === 'anchor' ? gv : +gv, 'USER', note || 'réglage global'); return miss(key); }
+function thermVals(ov) {
+  return { insE: globalOrMiss('insE', ov.insE, App.F.insE), insL: globalOrMiss('insL', ov.insL, App.F.insL), h: globalOrMiss('h', ov.h, App.F.h), Tamb: globalOrMiss('Tamb', ov.Tamb, App.F.Tamb), heat: globalOrMiss('heat', ov.heat, App.F.heat) };
+}
+function materialize() {
+  const m = App.model; if (!m) return null;
+  const nodeById = Object.fromEntries(m.nodes.map(n => [n.id, n]));
+  const atNode = {}; for (const c of m.comps) for (const n of c.nodes) if (n) (atNode[n] = atNode[n] || []).push(c);
+  const other = (nid, self) => (atNode[nid] || []).find(c => c !== self);
+  const R = { pipes: [], bends: [], tees: [], reds: [], eqs: [], nodes: [], free: [], all: [] };
+  const fp = fluidProps(); R.fluid = fp;
+  const Qg = num(App.F.Q);
+  for (const c of m.comps) {
+    const ov = App.ov[c.id] || {}; const v = {};
+    const na = nodeById[c.nodes[0]], nb = nodeById[c.nodes[c.nodes.length - 1]];
+    if (c.kind === 'PIPE') {
+      let De = num(ov.De) != null ? mk('De', +ov.De, 'USER') : c.De != null ? mk('De', rnd(c.De, 4), 'STEP', c.deSrc) : null;
+      let e = num(ov.e) != null ? mk('e', +ov.e, 'USER') : null;
+      let Di = num(ov.Di) != null ? mk('Di', +ov.Di, 'USER') : (c.Di != null) ? mk('Di', rnd(c.Di, 4), 'STEP', c.diSrc) : null;
+      if (!e && Di && De) e = mk('e', rnd((De.v - Di.v) / 2, 4), 'CALC', '(De − Di)/2');
+      if (!e && De && !Di) { const st = stdThickness(De.v, App.S.thkStd); if (st) e = mk('e', st.e, 'DEF', st.src); }
+      if (!Di && De && e) Di = mk('Di', rnd(De.v - 2 * e.v, 4), e.o === 'DEF' ? 'DEF' : 'CALC', e.o === 'DEF' ? 'De − 2e (épaisseur normalisée, tube modélisé par son seul De)' : 'De − 2e');
+      if (!De && Di && e && e.o === 'USER') De = mk('De', rnd(Di.v + 2 * e.v, 4), 'CALC', 'Di + 2e');
+      v.Di = Di || miss('Di', c.odOnly ? 'De seul modélisé, aucune classe normalisée trouvée' : ''); v.De = De || miss('De', c.idOnly ? 'cylindre unique interprété comme Di' : 'pas de paroi extérieure coaxiale'); v.e = e || miss('e');
+      v.L = num(ov.L) != null ? mk('L', +ov.L, 'USER') : mk('L', rnd(c.L / 1000, 6), 'STEP', c.src + " — bornes des faces le long de l'axe" + (c.cut ? ", mesuré jusqu'au point de jonction" : ''));
+      v.dz = mk('dz', rnd(altOf(nb.p) - altOf(na.p), 5), 'CALC', 'altitude aval − amont');
+      v.A = v.Di.v != null ? mk('none', rnd(Math.PI * v.Di.v * v.Di.v / 4, 3), 'CALC', 'π·Di²/4') : miss('none');
+      Object.assign(v, matVals(ov, v.Di.v));
+      v.anchor = globalOrMiss('anchor', ov.anchor, App.F.anchor);
+      Object.assign(v, thermVals(ov));
+      v.vol = (v.Di.v != null) ? mk('none', rnd(Math.PI * v.Di.v * v.Di.v / 4 * c.L * 1e-6, 4), 'CALC', 'section × longueur') : miss('none');
+      R.pipes.push({ c, v });
+    } else if (c.kind === 'BEND') {
+      const mitre = c.sub2 === 'onglet';
+      v.type = mk('none', mitre ? 'À onglet (mitre)' : 'Cintré', 'CALC', mitre ? "angle d'axes au nœud" : 'surface torique');
+      v.Di = num(ov.Di) != null ? mk('Di', +ov.Di, 'USER') : c.Di != null ? mk('Di', rnd(c.Di, 4), mitre ? 'CALC' : 'STEP', mitre ? '= Di des tubes raccordés' : c.diSrc) : null;
+      v.De = c.De != null ? mk('De', rnd(c.De, 4), 'STEP', c.deSrc) : miss('De');
+      if (!v.Di && c.De) { const st = stdThickness(c.De, App.S.thkStd); if (st) v.Di = mk('Di', rnd(c.De - 2 * st.e, 4), 'DEF', 'De − 2e, ' + st.src); }
+      v.Di = v.Di || miss('Di');
+      v.R = num(ov.R) != null ? mk('R', +ov.R, 'USER') : mitre ? mk('R', 0, 'CALC', 'coude à onglet') : mk('R', rnd(c.R, 4), 'STEP', c.src + ' (rayon majeur)');
+      v.RD = v.Di.v ? mk('RD', rnd(v.R.v / v.Di.v, 4), 'CALC', 'R / Di') : miss('RD');
+      v.theta = num(ov.theta) != null ? mk('theta', +ov.theta, 'USER') : mk('theta', rnd(c.theta, 3), mitre ? 'CALC' : 'STEP', mitre ? 'angle entre les axes des tubes' : c.src + ' (azimuts balayés)');
+      v.Ldev = mk('Ldev', rnd(v.R.v * v.theta.v / DEG / 1000, 6), 'CALC', 'R × θ');
+      Object.assign(v, matVals(ov, v.Di.v));
+      v.corr = mk('none', mitre ? 'Miller – coude à onglet (angle, Re)' : 'Miller – coude circulaire (R/D, angle, Re)', 'CALC', 'suggestion');
+      Object.assign(v, thermVals(ov));
+      if (v.Di.v && v.eps.v != null) { const ft = fT(v.eps.v, v.Di.v); const K = mitre ? KMitre(v.theta.v, ft) : KBend(Math.max(v.RD.v, 1), v.theta.v, ft); v.K = mk('none', rnd(K, 4), 'CALC', 'indicatif Crane TP-410' + (!mitre && v.RD.v < 1 ? ' (R/D < 1 : extrapolé)' : '')); v.Le = mk('none', rnd(K * v.Di.v / ft / 1000, 4), 'CALC', 'K·Di/fT'); } else { v.K = miss('none'); v.Le = miss('none'); }
+      R.bends.push({ c, v });
+    } else if (c.kind === 'TEE' || c.kind === 'JCT') {
+      const arms = c.arms; const iA = c.main[0], iB = c.main[1], iC = c.branch;
+      const D = (i) => { const a = arms[i]; if (!a) return miss('Darm'); const o = other(a.node, c); return a.D != null ? mk('Darm', rnd(a.D, 4), 'STEP', 'Di de ' + (o ? o.id : '?')) : miss('Darm'); };
+      v.n1 = arms[iA] ? arms[iA].node : ''; v.n2 = arms[iB] ? arms[iB].node : ''; v.n3 = iC != null && arms[iC] ? arms[iC].node : '';
+      v.D1 = D(iA); v.D2 = D(iB); v.D3 = iC != null ? D(iC) : miss('Darm');
+      if (c.kind === 'JCT') v.D3 = mk('none', arms.length + ' branches', 'INFO', 'jonction multiple : à modéliser manuellement');
+      const sq = (x) => x.v * x.v;
+      v.r31 = (v.D1.v && v.D3.v && c.kind === 'TEE') ? mk('ratio', rnd(sq(v.D3) / sq(v.D1), 4), 'CALC', 'A_dérivé / A_principal1') : miss('ratio');
+      v.r21 = (v.D1.v && v.D2.v) ? mk('ratio', rnd(sq(v.D2) / sq(v.D1), 4), 'CALC', 'A_principal2 / A_principal1') : miss('ratio');
+      v.ang = c.angle != null ? mk('tang', rnd(c.angle, 2), 'CALC', 'angle entre axes') : miss('tang');
+      v.rj = num(ov.rj) != null ? mk('rj', +ov.rj, 'USER') : miss('rj', "rayon du congé d'intersection non extrait");
+      v.cfg = ov.cfg ? mk('cfg', ov.cfg, 'USER') : miss('cfg', "dépend du sens d'écoulement réel");
+      v.corr = mk('none', 'Miller – té (rapports de sections et de débits, angle)', 'CALC', 'suggestion');
+      const mt = matVals({}, v.D1.v); if (v.D1.v && mt.eps.v != null) { const ft = fT(mt.eps.v, v.D1.v); v.Krun = mk('none', rnd(20 * ft, 4), 'CALC', 'indicatif Crane : 20·fT (passage direct)'); v.Kbr = mk('none', rnd(60 * ft, 4), 'CALC', 'indicatif Crane : 60·fT (dérivation)'); } else { v.Krun = miss('none'); v.Kbr = miss('none'); }
+      R.tees.push({ c, v });
+    } else if (c.kind === 'RED') {
+      const brusque = c.sub2 === 'brusque';
+      const dsrc = brusque ? '= Di des composants raccordés' : c.diSrc;
+      const dget = (k, Dv, Dev) => {
+        if (num(ov[k]) != null) return mk('D12', +ov[k], 'USER');
+        if (Dv != null) return mk('D12', rnd(Dv, 4), brusque ? 'CALC' : 'STEP', dsrc);
+        if (Dev != null) { const st = stdThickness(Dev, App.S.thkStd); if (st) return mk('D12', rnd(Dev - 2 * st.e, 4), 'DEF', 'De − 2e, ' + st.src); }
+        return miss('D12');
+      };
+      v.D1 = dget('D1', c.D1, c.De1); v.D2 = dget('D2', c.D2, c.De2);
+      v.type = mk('none', brusque ? 'Brusque' : 'Progressive (conique)', 'CALC', brusque ? 'cylindres coaxiaux sans cône' : 'surface conique');
+      v.sens = (v.D1.v && v.D2.v) ? mk('none', v.D2.v < v.D1.v ? 'Réduction' : 'Élargissement', 'CALC', 'dans le sens de numérotation (à confirmer avec le sens d\'écoulement)') : miss('none');
+      v.ratio = (v.D1.v && v.D2.v) ? mk('ratio', rnd((v.D2.v * v.D2.v) / (v.D1.v * v.D1.v), 4), 'CALC', 'A2 / A1') : miss('ratio');
+      v.beta = (v.D1.v && v.D2.v) ? mk('none', rnd(Math.min(v.D1.v, v.D2.v) / Math.max(v.D1.v, v.D2.v), 4), 'CALC', 'D petit / D grand') : miss('none');
+      v.cone = brusque ? mk('cone', 180, 'CALC', 'variation brusque') : mk('cone', rnd(c.angle, 3), 'STEP', c.src + ' (2 × demi-angle)');
+      v.L = brusque ? mk('Lred', 0, 'CALC', 'longueur nulle') : mk('Lred', rnd(c.L, 4), 'STEP', c.src);
+      if (v.beta.v != null) { const Ks = KRed(Math.min(v.D1.v, v.D2.v), Math.max(v.D1.v, v.D2.v), v.cone.v, v.D2.v < v.D1.v); v.K = mk('none', rnd(Ks, 4), 'CALC', 'indicatif Crane TP-410, rapporté à la vitesse dans le petit diamètre'); } else v.K = miss('none');
+      R.reds.push({ c, v });
+    } else if (c.kind === 'EQ') {
+      const t = App.eqType[c.id] || c.eqType;
+      v.type = App.eqType[c.id] ? mk('eqtype', t, 'USER') : c.unknown ? miss('eqtype', 'corps non identifié par son nom') : mk('eqtype', t, 'STEP', 'nom de produit CAO, mot-clé « ' + c.kw + ' »');
+      v.ports = c.ports.map((p, i) => { const k = 'DN' + (i + 1); if (num(ov[k]) != null) return mk('DN', +ov[k], 'USER'); if (p.src) return mk('DN', rnd(p.D, 4), 'STEP', p.src + ' (alésage de la tubulure)'); if (p.pipeD != null) return mk('DN', rnd(p.pipeD, 4), 'CALC', '= Di du tube raccordé'); return miss('DN'); });
+      if (t === 'Pompe' && c.ports.length === 2 && v.ports[0].v && v.ports[1].v && v.ports[0].v !== v.ports[1].v) { const ia = v.ports[0].v > v.ports[1].v ? 0 : 1; v.suggest = mk('none', 'Aspiration probable : ' + c.ports[ia].node + ' (plus grand DN)', 'CALC', 'suggestion, à confirmer'); }
+      v.params = (EQ_PARAMS[t] || EQ_PARAMS['Équipement (autre)']).map(([k, label, fm, unit, need]) => { NEED['eq_' + k] = need; const x = ov[k] ? mk('eq_' + k, ov[k], 'USER') : miss('eq_' + k, 'performance constructeur — jamais estimée'); x.label = label; x.fm = fm; x.unit = unit; x.key = k; return x; });
+      if (t === 'Réservoir' && c.bbox) { const zb = Math.min(altOf([c.bbox[0], c.bbox[1], c.bbox[2]]), altOf([c.bbox[3], c.bbox[4], c.bbox[5]])); v.zb = mk('zb', rnd(zb, 4), 'CALC', 'boîte englobante du corps'); }
+      v.t = t;
+      if (!c.nodes.length) v.warn = 'Non raccordé au réseau';
+      R.eqs.push({ c, v });
+    }
+  }
+  // Nœuds et conditions aux limites
+  for (const n of m.nodes) {
+    const cs = (atNode[n.id] || []);
+    const type = n.deg === 1 ? 'Extrémité libre' : n.eq ? 'Raccord équipement' : n.split ? 'Bras de composant (té / onglet / variation)' : n.deg >= 3 ? 'Jonction' : 'Raccord';
+    const r = { n, type, comps: cs.map(c => c.id).join(', '), alt: mk('none', rnd(altOf(n.p), 5), 'CALC', 'axe vertical ' + App.S.vertical) };
+    if (n.deg === 1) {
+      const b = App.bc[n.id] || {};
+      r.bct = b.type ? mk('bc', b.type, 'USER') : miss('bc', 'pression, débit ou réservoir');
+      r.bcv = num(b.val) != null ? mk('bcv', +b.val, 'USER') : miss('bcv');
+      r.bcu = b.type ? BC_UNITS[b.type] || '' : '';
+      r.Tin = num(b.T) != null ? mk('Tin', +b.T, 'USER') : num(App.F.Tin) != null ? mk('Tin', +App.F.Tin, 'USER', 'réglage global') : miss('Tin');
+      if (b.type === 'Bouchon / extrémité fermée') { r.bcv = mk('none', '—', 'CALC', 'sans valeur'); }
+      R.free.push(r);
+    }
+    R.nodes.push(r);
+  }
+  // Scénario / simulation
+  R.sim = {
+    dt: globalOrMiss('dt', null, App.F.dt, 'saisi'), dur: globalOrMiss('dur', null, App.F.dur, 'saisi'),
+    events: App.F.events ? mk('events', App.F.events, 'USER') : miss('events', "ex. fermeture de V001 en 2 s à t = 1 s"),
+    anchor: globalOrMiss('anchor', null, App.F.anchor), Q: num(App.F.Q) != null ? mk('none', +App.F.Q, 'USER', 'contrôle uniquement') : miss('none')
+  };
+  // Contrôle de vraisemblance + vitesse d'onde
+  R.ctrl = []; let amin = null;
+  const rho = fp.rho.v, mu = fp.mu.v, Kf = fp.K.v;
+  for (const grp of [R.pipes, R.bends, R.reds, R.tees]) for (const it of grp) {
+    const c = it.c, v = it.v; const ovq = num((App.ov[c.id] || {}).Q); const Q = ovq != null ? ovq : Qg;
+    const D = c.kind === 'RED' ? (v.D1.v && v.D2.v ? Math.min(v.D1.v, v.D2.v) : null) : (c.kind === 'TEE' || c.kind === 'JCT') ? v.D1.v : v.Di.v;
+    const row = { c, Q, D };
+    if (c.kind === 'PIPE' && App.F.an.T && Kf && rho && v.E.v && v.e.v && v.Di.v) {
+      const an = (v.anchor.v || ''); const nu = v.nu.v; const c1 = /amont/i.test(an) ? 1 - nu / 2 : /dilatation/i.test(an) ? 1 : 1 - nu * nu;
+      row.a = Math.sqrt((Kf * 1e9 / rho) / (1 + c1 * (Kf / v.E.v) * (v.Di.v / v.e.v))); row.tL = (v.L.v) / row.a; if (amin == null || row.tL < amin) amin = row.tL;
+      row.aNote = an ? '' : 'ancrage non renseigné : c1 = 1 − ν² supposé';
+    }
+    if (Q != null && D && rho && mu) {
+      const A = Math.PI * D * D / 4e6; row.vel = Q / 3600 / A; row.Re = rho * row.vel * D / 1000 / mu;
+      const eps = (v.eps && v.eps.v != null) ? v.eps.v : matVals({}, D).eps.v; row.rel = eps / D; row.f = colebrook(row.Re, row.rel);
+      const q = rho * row.vel * row.vel / 2;
+      if (c.kind === 'PIPE') { row.dpf = row.f * v.L.v / (D / 1000) * q; row.K = 0; }
+      else if (c.kind === 'BEND') { row.K = v.K.v || 0; row.dpf = 0; }
+      else if (c.kind === 'RED') { row.K = v.K.v || 0; row.dpf = 0; }
+      else { row.K = v.Krun.v || 0; row.dpf = 0; row.note = 'K passage direct, répartition des débits inconnue'; }
+      row.dps = row.K * q; row.dp = row.dpf + row.dps;
+      row.dzst = c.kind === 'PIPE' ? rho * 9.80665 * v.dz.v : null;
+      if (row.vel > 3) row.note = (row.note ? row.note + ' ; ' : '') + 'vitesse > 3 m/s';
+      if (row.Re > 2300 && row.Re < 4000) row.note = (row.note ? row.note + ' ; ' : '') + 'régime de transition';
+    }
+    R.ctrl.push(row);
+  }
+  R.dtSuggest = amin;
+  // Agrégats
+  const tot = { L: 0, Vol: 0 };
+  for (const it of R.pipes) { tot.L += it.c.L; if (it.v.Di.v) tot.Vol += Math.PI * it.v.Di.v * it.v.Di.v / 4 * it.c.L; }
+  for (const it of R.bends) { const L = (it.v.R.v || 0) * (it.v.theta.v || 0) / DEG; tot.L += L; if (it.v.Di.v) tot.Vol += Math.PI * it.v.Di.v * it.v.Di.v / 4 * L; }
+  for (const it of R.reds) { const L = it.v.L.v || 0; tot.L += L; if (it.v.D1.v && it.v.D2.v) { const r1 = it.v.D1.v / 2, r2 = it.v.D2.v / 2; tot.Vol += Math.PI * L / 3 * (r1 * r1 + r1 * r2 + r2 * r2); } }
+  R.tot = tot;
+  // Liste « à compléter » + complétude
+  const todo = []; let req = 0, ok = 0;
+  const scan = (sheet, id, label, x) => { if (!x || typeof x !== 'object' || !('o' in x)) return; const l = needLvl(x.need); if (l === 'B') { req++; if (x.o !== 'TODO') ok++; } if (x.o === 'TODO') todo.push({ sheet, id, label, crit: x.crit, note: x.s }); };
+  const LBL = { Di: 'Diamètre intérieur', De: 'Diamètre extérieur', e: 'Épaisseur', L: 'Longueur', eps: 'Rugosité', mat: 'Matériau', E: "Module d'Young", nu: 'Coefficient de Poisson', anchor: 'Ancrage', kw: 'Conductivité paroi', insE: 'Épaisseur isolant', insL: 'Conductivité isolant', h: "Coefficient d'échange externe", Tamb: 'Température ambiante', heat: 'Source de chaleur', R: 'Rayon de cintrage', RD: 'R/D', theta: 'Angle', D1: 'Diamètre bras / D1', D2: 'Diamètre bras / D2', D3: 'Diamètre dérivation', rj: 'Rayon de raccordement r/D', cfg: 'Configuration convergent/divergent', r31: 'Rapport de sections', r21: 'Rapport de sections', ang: 'Angle du piquage', cone: 'Angle de cône', type: "Type d'équipement" };
+  const scanGroup = (sheet, arr) => { for (const it of arr) for (const k in it.v) { const x = it.v[k]; if (Array.isArray(x)) x.forEach((p, i) => scan(sheet, it.c.id, p.label || ('DN raccord ' + (i + 1)), p)); else scan(sheet, it.c.id, LBL[k] || k, x); } };
+  scanGroup('Tubes', R.pipes); scanGroup('Coudes', R.bends); scanGroup('Tés et jonctions', R.tees); scanGroup('Variations de section', R.reds); scanGroup('Équipements', R.eqs);
+  for (const r of R.free) { scan('Conditions aux limites', r.n.id, 'Condition aux limites (type)', r.bct); scan('Conditions aux limites', r.n.id, 'Condition aux limites (valeur)', r.bcv); scan('Conditions aux limites', r.n.id, "Température d'entrée", r.Tin); }
+  for (const k in fp) scan('Fluide', '—', fp[k].label, fp[k]);
+  for (const [k, l] of [['dt', 'Pas de temps'], ['dur', 'Durée simulée'], ['events', 'Lois temporelles / événements']]) scan('Conditions aux limites', '—', l, R.sim[k]);
+  todo.sort((a, b) => (a.crit === 'B' ? 0 : 1) - (b.crit === 'B' ? 0 : 1));
+  R.todo = todo; R.req = req; R.ok = ok; R.compl = req ? ok / req : 1;
+  // Statut par composant
+  R.status = {};
+  for (const t of todo) { if (!R.status[t.id]) R.status[t.id] = { B: 0, P: 0 }; R.status[t.id][t.crit]++; }
+  return R;
+}
+const BC_UNITS = { 'Pression imposée': 'bar abs', 'Débit imposé': 'm³/h', 'Réservoir (niveau)': 'm', 'Bouchon / extrémité fermée': '—' };
+const ANCHORS = ['Ancré à l\'amont uniquement', 'Ancré sur toute la longueur', 'Joints de dilatation'];
+const statusText = (R, id) => { const s = R.status[id]; if (!s) return 'Complet'; if (s.B) return `À compléter (${s.B} bloquant${s.B > 1 ? 's' : ''})`; return `Complet (${s.P} optionnel${s.P > 1 ? 's' : ''})`; };
+
+/* ---------- Analyse : Web Worker (repli : fil principal) ---------- */
+function workerGlue() {
+  let db = null;
+  self.onmessage = async (ev) => {
+    const m = ev.data;
+    try {
+      if (m.cmd === 'load') {
+        const text = await m.file.text(); self.postMessage({ type: 'progress', phase: 'Lecture du STEP', pct: 0 });
+        db = parseStep(text, p => self.postMessage({ type: 'progress', phase: 'Lecture du STEP', pct: p }));
+        self.postMessage({ type: 'loaded', n: db.raw.size, header: db.header });
+      } else if (m.cmd === 'analyze') {
+        const model = analyze(db, m.S, p => self.postMessage({ type: 'progress', phase: 'Reconnaissance des corps', pct: p }));
+        self.postMessage({ type: 'result', model });
+      }
+    } catch (err) { self.postMessage({ type: 'error', msg: err && err.message ? err.message : String(err) }); }
+  };
+}
+let mainDb = null;
+function getWorker() {
+  if (App.worker !== null) return App.worker;
+  try {
+    const src = $('#core-src').textContent + '\n(' + workerGlue.toString() + ')();';
+    const w = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    w.onmessage = (e) => onWorkerMsg(e.data);
+    w.onerror = (e) => { e.preventDefault(); App.worker = false; setStatus('Web Worker indisponible : analyse dans le fil principal.', 'warn'); if (App.pendingFile) runMain(App.pendingFile); };
+    App.worker = w; return w;
+  } catch (e) { App.worker = false; return false; }
+}
+function settingsForCore() {
+  const kw = []; for (const line of App.S.keywordsText.split(/\n/)) { const m = /^\s*([^:]+):(.*)$/.exec(line); if (!m) continue; kw.push([m[1].trim(), m[2].split(',').map(s => s.trim()).filter(Boolean)]); }
+  return { tol: Math.max(1e-4, num(App.S.tol) || 0.1), vertical: App.S.vertical, unitOverride: App.S.unitOverride, singleAs: App.S.singleAs, keywords: kw, bodyOverrides: App.S.bodyOverrides };
+}
+function loadFile(file) {
+  App.fileName = file.name; App.pendingFile = file; App.ov = {}; App.bc = {}; App.eqType = {}; App.S.bodyOverrides = {}; App.sel = null;
+  setStatus('Lecture de « ' + file.name + ' » (' + (file.size / 1048576).toFixed(1) + ' Mo)…'); setProgress(0.01, 'Lecture du STEP');
+  const w = getWorker();
+  if (w) w.postMessage({ cmd: 'load', file }); else runMain(file);
+}
+async function runMain(file) {
+  try {
+    const text = await file.text(); setProgress(0.1, 'Lecture du STEP (fil principal)');
+    await new Promise(r => setTimeout(r, 30));
+    mainDb = parseStep(text); onWorkerMsg({ type: 'loaded', n: mainDb.raw.size, header: mainDb.header });
+  } catch (e) { onWorkerMsg({ type: 'error', msg: e.message }); }
+}
+function reanalyze() {
+  if (!App.pendingFile) return; setProgress(0.05, 'Reconnaissance des corps');
+  const S = settingsForCore();
+  if (App.worker) App.worker.postMessage({ cmd: 'analyze', S });
+  else setTimeout(() => { try { onWorkerMsg({ type: 'result', model: analyze(mainDb, S) }); } catch (e) { onWorkerMsg({ type: 'error', msg: e.message }); } }, 20);
+}
+function onWorkerMsg(m) {
+  if (m.type === 'progress') setProgress(m.pct, m.phase);
+  else if (m.type === 'loaded') { setStatus(`${m.n.toLocaleString('fr-FR')} entités lues — schéma ${m.header.schema}. Analyse en cours…`); reanalyze(); }
+  else if (m.type === 'result') { App.model = m.model; setProgress(null); setStatus(`« ${App.fileName} » analysé en ${m.model.ms} ms : ${m.model.topo.comps} composants, ${m.model.topo.nodes} nœuds.`, 'ok'); $('#btnExport').disabled = false; viewer.fit(); refresh(); }
+  else if (m.type === 'error') { setProgress(null); setStatus('Erreur : ' + m.msg, 'err'); }
+}
+function setStatus(t, cls) { const e = $('#status'); e.textContent = t; e.className = 'status ' + (cls || ''); }
+function setProgress(p, phase) { const b = $('#prog'); if (p == null) { b.style.display = 'none'; return; } b.style.display = 'block'; $('#progBar').style.width = Math.round(Math.max(0.02, Math.min(1, p)) * 100) + '%'; $('#progTxt').textContent = phase || ''; }
+
+/* ---------- Rendu de l'interface ---------- */
+let MAT_R = null;
+function refresh() { MAT_R = materialize(); renderTab(); renderInspector(); viewer.draw(); }
+const badge = (x) => x ? `<span class="o o-${x.o}" title="${esc(origText(x))}">${{ STEP: 'STEP', CALC: 'calc', DEF: 'déf', USER: 'saisi', TODO: 'à compl.', NA: 'n.r.', INFO: 'info' }[x.o] || ''}</span>` : '';
+const cellV = (x, n = 3) => !x ? '' : (x.v == null ? `<span class="todo">${x.o === 'NA' ? '—' : 'À COMPLÉTER'}</span>` : esc(fmt(x.v, n))) + ' ' + badge(x);
+const TYPE_LABEL = { PIPE: 'Tube', BEND: 'Coude', TEE: 'Té', JCT: 'Jonction multiple', RED: 'Variation de section', EQ: 'Équipement' };
+function renderTab() {
+  const t = $('.tab.on').dataset.t; const box = $('#panel'); const m = App.model, R = MAT_R;
+  if (t === 'help') { box.innerHTML = HELP_HTML; return; }
+  if (t === 'ref') { box.innerHTML = refTableHtml(); return; }
+  if (t === 'data') { box.innerHTML = dataFormHtml(); bindDataForm(); return; }
+  if (t === 'set') { box.innerHTML = settingsHtml() + (m ? synthHtml() : '<p class="hint">Chargez un fichier STEP (bouton en haut ou glisser-déposer) pour lancer l\'analyse.</p>'); bindSettings(); return; }
+  if (!m) { box.innerHTML = '<p class="hint">Aucun fichier analysé.</p>'; return; }
+  if (t === 'comp') {
+    const types = ['Tous', 'Tube', 'Coude', 'Té', 'Variation de section', 'Équipement', 'À compléter'];
+    let h = `<div class="bar">Afficher : <select id="flt">${types.map(x => `<option${x === App.filter ? ' selected' : ''}>${x}</option>`).join('')}</select> <span class="hint">Cliquez une ligne pour l'éditer et la repérer en 3D.</span></div>`;
+    h += '<table class="grid"><thead><tr><th>ID</th><th>Type</th><th>Nœuds</th><th>Di / D1 (mm)</th><th>L (m) / angle</th><th>Corps CAO</th><th>Statut</th></tr></thead><tbody>';
+    const rows = [...R.pipes.map(x => ['Tube', x]), ...R.bends.map(x => ['Coude', x]), ...R.tees.map(x => ['Té', x]), ...R.reds.map(x => ['Variation de section', x]), ...R.eqs.map(x => ['Équipement', x])];
+    rows.sort((a, b) => m.comps.indexOf(a[1].c) - m.comps.indexOf(b[1].c));
+    for (const [ty, it] of rows) {
+      const st = statusText(R, it.c.id);
+      if (App.filter === 'À compléter' ? !/bloquant/.test(st) : (App.filter !== 'Tous' && App.filter !== ty)) continue;
+      const v = it.v; const d = v.Di || v.D1 || (v.ports && v.ports[0]);
+      const l = ty === 'Tube' ? cellV(v.L, 4) : ty === 'Coude' ? fmt(v.theta.v, 1) + '° · R/D ' + fmt(v.RD.v, 2) + ' ' + badge(v.theta) : ty === 'Té' ? fmt(v.ang.v, 1) + '° ' + badge(v.ang) : ty === 'Variation de section' ? fmt(v.D2.v, 2) + ' mm, ' + v.type.v : esc(v.t);
+      h += `<tr data-id="${it.c.id}" class="${App.sel === it.c.id ? 'sel' : ''}"><td><b>${it.c.id}</b></td><td>${ty}${it.c.sub2 ? ' ' + it.c.sub2 : ''}</td><td>${it.c.nodes.join(' → ')}</td><td>${cellV(d, 2)}</td><td>${l}</td><td class="sm">${esc(it.c.bodyName || '')}</td><td class="${/bloquant/.test(st) ? 'bad' : 'good'}">${st}</td></tr>`;
+    }
+    box.innerHTML = h + '</tbody></table>';
+    $('#flt').onchange = (e) => { App.filter = e.target.value; renderTab(); };
+    $$('#panel tr[data-id]').forEach(tr => tr.onclick = () => select(tr.dataset.id));
+  }
+  if (t === 'nodes') {
+    let h = `<h3>Extrémités libres : conditions aux limites (${R.free.length})</h3><p class="hint">Chaque extrémité libre doit recevoir une condition aux limites dans Flowmaster (source de pression, de débit ou réservoir).</p>`;
+    h += '<table class="grid"><thead><tr><th>Nœud</th><th>Altitude (m)</th><th>Composant</th><th>Type de condition</th><th>Valeur</th><th>Unité</th><th>T entrée (°C)</th></tr></thead><tbody>';
+    for (const r of R.free) { const b = App.bc[r.n.id] || {}; h += `<tr data-node="${r.n.id}"><td><b>${r.n.id}</b></td><td>${fmt(r.alt.v, 3)}</td><td>${r.comps}</td><td><select data-bc="type"><option value="">— à compléter —</option>${Object.keys(BC_UNITS).map(k => `<option${b.type === k ? ' selected' : ''}>${k}</option>`).join('')}</select></td><td><input data-bc="val" value="${esc(b.val || '')}" size="7"></td><td>${r.bcu || ''}</td><td><input data-bc="T" value="${esc(b.T || '')}" size="5"></td></tr>`; }
+    h += '</tbody></table><h3>Tous les nœuds</h3><table class="grid"><thead><tr><th>ID</th><th>X (mm)</th><th>Y (mm)</th><th>Z (mm)</th><th>Altitude (m)</th><th>Type</th><th>Composants</th></tr></thead><tbody>';
+    for (const r of R.nodes) h += `<tr data-nsel="${r.n.id}"><td>${r.n.id}</td><td>${fmt(r.n.p[0], 2)}</td><td>${fmt(r.n.p[1], 2)}</td><td>${fmt(r.n.p[2], 2)}</td><td>${fmt(r.alt.v, 3)}</td><td>${r.type}</td><td>${r.comps}</td></tr>`;
+    box.innerHTML = h + '</tbody></table>';
+    $$('#panel tr[data-node]').forEach(tr => { $$('[data-bc]', tr).forEach(inp => inp.onchange = () => { const id = tr.dataset.node; App.bc[id] = App.bc[id] || {}; App.bc[id][inp.dataset.bc] = inp.value; refresh(); }); });
+    $$('#panel tr[data-nsel]').forEach(tr => tr.onclick = () => select(tr.dataset.nsel));
+  }
+  if (t === 'eq') {
+    let h = '<p class="hint">Les caractéristiques de performance ne sont jamais estimées : elles doivent venir des fiches constructeur. Saisie libre (ex. courbe H-Q : « 0:32 ; 10:30 ; 20:25 »).</p>';
+    if (!R.eqs.length) h += '<p>Aucun équipement identifié. Vérifiez les mots-clés (onglet Réglages) ou classez les corps dans l\'onglet « Corps CAO ».</p>';
+    for (const it of R.eqs) {
+      const c = it.c, v = it.v;
+      h += `<div class="card" data-eq="${c.id}"><div class="card-h"><b>${c.id}</b> — « ${esc(c.bodyName)} » <select data-eqtype>${EQ_TYPES.map(x => `<option${x === v.t ? ' selected' : ''}>${x}</option>`).join('')}</select> ${badge(v.type)} <span class="sm">Nœuds : ${c.nodes.join(' → ') || '—'}</span> ${v.warn ? `<span class="bad">${v.warn}</span>` : ''}</div>`;
+      h += '<table class="kv">';
+      v.ports.forEach((p, i) => h += `<tr><td>DN raccord ${i + 1} — ${c.ports[i].node} (mm)</td><td><input data-k="DN${i + 1}" value="${p.o === 'USER' ? p.v : ''}" placeholder="${p.v != null ? fmt(p.v, 2) : ''}" size="8"> ${badge(p)}</td></tr>`);
+      if (v.suggest) h += `<tr><td>Sens</td><td>${esc(v.suggest.v)} ${badge(v.suggest)}</td></tr>`;
+      if (v.zb) h += `<tr><td>Altitude du fond (m)</td><td>${fmt(v.zb.v, 3)} ${badge(v.zb)}</td></tr>`;
+      for (const p of v.params) h += `<tr><td>${esc(p.label)} (${esc(p.fm)}) [${esc(p.unit)}]</td><td><input data-k="${p.key}" value="${esc(p.o === 'USER' ? p.v : '')}" size="28" placeholder="${p.o === 'NA' ? 'non requis' : 'À COMPLÉTER'}"> ${badge(p)}</td></tr>`;
+      h += '</table></div>';
+    }
+    box.innerHTML = h;
+    $$('#panel .card').forEach(card => {
+      const id = card.dataset.eq;
+      $('[data-eqtype]', card).onchange = (e) => { App.eqType[id] = e.target.value; refresh(); };
+      $$('input[data-k]', card).forEach(inp => inp.onchange = () => { (App.ov[id] = App.ov[id] || {})[inp.dataset.k] = inp.value; refresh(); });
+      card.onclick = (e) => { if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') select(id); };
+    });
+  }
+  if (t === 'bodies') {
+    let h = '<p class="hint">Classement automatique par mots-clés du nom CAO. Modifiez le classement puis cliquez « Relancer l\'analyse ».</p><div class="bar"><button id="btnRe2">Relancer l\'analyse</button></div>';
+    h += '<table class="grid"><thead><tr><th>Corps (produit)</th><th>Chemin</th><th>Faces</th><th>Primitives</th><th>Classement</th><th>Remarques</th></tr></thead><tbody>';
+    for (const b of m.bodies) {
+      const cnt = Object.entries(b.counts).map(([k, n]) => `${k} ${n}`).join(' · ');
+      const cur = App.S.bodyOverrides[b.key] || 'Auto';
+      h += `<tr><td><b>${esc(b.name || '(sans nom)')}</b><br><span class="sm">#${b.brep} ${b.solid ? 'solide' : 'surfacique'}</span></td><td class="sm">${esc(b.path)}</td><td class="sm">${cnt}</td><td>${b.nPrims}</td><td><select data-body="${esc(b.key)}"><option${cur === 'Auto' ? ' selected' : ''}>Auto</option>${['Tuyauterie', ...EQ_TYPES, 'Ignorer'].map(x => `<option${cur === x ? ' selected' : ''}>${x}</option>`).join('')}</select><br><span class="sm">auto : ${esc(b.autoClass)}${b.kw ? ' (« ' + esc(b.kw) + ' »)' : ''}</span></td><td class="sm">${esc((b.notes || []).join(' ; '))}</td></tr>`;
+    }
+    box.innerHTML = h + '</tbody></table>';
+    $$('#panel select[data-body]').forEach(s => s.onchange = () => { if (s.value === 'Auto') delete App.S.bodyOverrides[s.dataset.body]; else App.S.bodyOverrides[s.dataset.body] = s.value; });
+    $('#btnRe2').onclick = reanalyze;
+  }
+}
+function settingsHtml() {
+  const S = App.S;
+  return `<h3>Réglages de reconnaissance</h3><div class="form">
+  <label>Tolérance de raccordement (mm)<input id="sTol" value="${esc(S.tol)}" size="6"></label>
+  <label>Axe vertical<select id="sVert">${['Z+', 'Z-', 'Y+', 'Y-', 'X+', 'X-'].map(x => `<option${x === S.vertical ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
+  <label>Unité de longueur<select id="sUnit">${[['auto', 'Lue dans le STEP'], ['mm', 'Forcer : mm'], ['m', 'Forcer : m'], ['in', 'Forcer : pouce']].map(([k, l]) => `<option value="${k}"${k === S.unitOverride ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+  <label>Corps à un seul cylindre<select id="sSingle"><option value="OD"${S.singleAs === 'OD' ? ' selected' : ''}>= diamètre extérieur (tube plein)</option><option value="ID"${S.singleAs === 'ID' ? ' selected' : ''}>= diamètre intérieur (volume fluide)</option></select></label>
+  <label>Norme d'épaisseur (De seul)<select id="sStd">${Object.entries(PIPE_STD).map(([k, s]) => `<option value="${k}"${k === S.thkStd ? ' selected' : ''}>${s.name}</option>`).join('')}</select></label>
+  </div><details><summary>Mots-clés d'identification des équipements (FR/EN, un type par ligne)</summary><textarea id="sKw" rows="9">${esc(S.keywordsText)}</textarea></details>
+  <div class="bar"><button id="btnRe">Relancer l'analyse</button> <span class="hint">L'axe vertical et la norme d'épaisseur s'appliquent sans relance.</span></div>`;
+}
+function bindSettings() {
+  const on = (id, f) => { const e = $(id); if (e) e.onchange = f; };
+  on('#sTol', e => App.S.tol = e.target.value); on('#sUnit', e => App.S.unitOverride = e.target.value); on('#sSingle', e => App.S.singleAs = e.target.value); on('#sKw', e => App.S.keywordsText = e.target.value);
+  on('#sVert', e => { App.S.vertical = e.target.value; viewer.fit(); refresh(); }); on('#sStd', e => { App.S.thkStd = e.target.value; refresh(); });
+  const b = $('#btnRe'); if (b) b.onclick = reanalyze;
+}
+function synthHtml() {
+  const m = App.model, R = MAT_R; const cnt = { Tubes: R.pipes.length, Coudes: R.bends.length, 'Tés / jonctions': R.tees.length, 'Variations de section': R.reds.length, 'Équipements': R.eqs.length };
+  const al = m.alerts; const lv = { err: 'Bloquant', warn: 'Attention', info: 'Info' };
+  const blk = R.todo.filter(t => t.crit === 'B').length;
+  return `<h3>Synthèse</h3><div class="kpis">
+   <div><b>${m.topo.comps}</b>composants</div><div><b>${m.topo.nodes}</b>nœuds</div><div><b>${m.topo.free}</b>extrémités libres</div><div><b>${m.topo.loops}</b>boucle(s)</div><div><b>${m.topo.subs}</b>sous-réseau(x)</div><div class="${R.compl < 1 ? 'kbad' : 'kgood'}"><b>${Math.round(R.compl * 100)} %</b>complétude (${blk} bloquant${blk > 1 ? 's' : ''})</div></div>
+   <table class="kv"><tr><td>Fichier</td><td>${esc(App.fileName)} — ${esc(m.header.schema)} — ${m.nEntities.toLocaleString('fr-FR')} entités</td></tr><tr><td>Unité CAO</td><td>${esc(m.unit)}${App.S.unitOverride !== 'auto' ? ' (forcée : ' + App.S.unitOverride + ')' : ''} ; angles : ${esc(m.angUnit)}</td></tr>
+   <tr><td>Composants</td><td>${Object.entries(cnt).map(([k, n]) => k + ' : ' + n).join(' · ')}</td></tr><tr><td>Longueur développée</td><td>${fmt(R.tot.L / 1000, 3)} m</td></tr><tr><td>Volume interne</td><td>${fmt(R.tot.Vol / 1e6, 3)} L</td></tr></table>
+   <h3>Alertes (${al.length})</h3><ul class="alerts">${al.map(a => `<li class="a-${a.lvl}"><b>${lv[a.lvl]}</b> ${esc(a.msg)}</li>`).join('') || '<li>Aucune.</li>'}</ul>`;
+}
+function dataFormHtml() {
+  const F = App.F; const inp = (k, v, sz = 8, ph = '') => `<input data-f="${k}" value="${esc(v)}" size="${sz}" placeholder="${ph}">`;
+  const fl = FLUIDS[F.fluid]; const lib = F.fluid !== 'manual' ? fl.f(+F.T || 20, +F.P || 1) : null;
+  const pr = [['rho', 'ρ (kg/m³)'], ['mu', 'μ (Pa·s)'], ['cp', 'Cp (J/(kg·K))'], ['lam', 'λ (W/(m·K))'], ['K', 'Module de compressibilité (GPa)'], ['pv', 'Pression de vapeur (kPa)'], ['R', 'Constante du gaz (J/(kg·K))'], ['gamma', 'γ (–)']];
+  return `<h3>Type(s) d'analyse visé(s)</h3><div class="form">${Object.entries(ANALYSES).map(([k, l]) => `<label class="chk"><input type="checkbox" data-an="${k}"${F.an[k] ? ' checked' : ''}> ${l}</label>`).join('')}</div>
+  ${F.an.C ? '<p class="warn">Compressible : extension optionnelle. Vérifier dans Flowmaster les composants gaz et les données propres (γ, R, conditions d\'arrêt).</p>' : ''}
+  <h3>Fluide</h3><div class="form"><label>Fluide<select data-f="fluid">${Object.entries(FLUIDS).map(([k, f]) => `<option value="${k}"${k === F.fluid ? ' selected' : ''}>${f.name}</option>`).join('')}</select></label>
+  <label>Température de référence (°C)${inp('T', F.T, 5)}</label><label>Pression de référence (bar abs)${inp('P', F.P, 6)}</label></div>
+  <p class="sm">${lib ? 'Source : ' + esc(lib.src) : 'Toutes les propriétés sont à saisir.'} — une valeur saisie ci-dessous remplace la bibliothèque.</p>
+  <div class="form">${pr.map(([k, l]) => `<label>${l}<input data-m="${k}" value="${esc(F.man[k])}" size="9" placeholder="${lib && lib[k === 'R' ? 'R' : k] != null ? fmt(lib[k === 'R' ? 'R' : k], k === 'mu' ? 7 : 4) : ''}"></label>`).join('')}</div>
+  <h3>Matériau et rugosité (global)</h3><div class="form"><label>Matériau par défaut des tubes<select data-f="mat">${MATERIALS.map(m => `<option${m[0] === F.mat ? ' selected' : ''}>${m[0]}</option>`).join('')}</select></label><label>Rugosité imposée à tous (mm)${inp('epsGlobal', F.epsGlobal, 7, 'table')}</label></div>
+  <p class="sm">Le matériau et la rugosité se modifient aussi composant par composant (clic sur un élément).</p>
+  <h3>Contrôle de vraisemblance</h3><div class="form"><label>Débit nominal (m³/h)${inp('Q', F.Q, 7)}</label></div><p class="sm">Utilisé seulement pour l'onglet de contrôle (vitesse, Re, ΔP indicatives). Débit identique supposé dans chaque branche sauf saisie par composant.</p>
+  ${F.an.T ? `<h3>Transitoire</h3><div class="form"><label>Ancrage des tubes<select data-f="anchor"><option value="">— à compléter —</option>${ANCHORS.map(a => `<option${a === F.anchor ? ' selected' : ''}>${esc(a)}</option>`).join('')}</select></label><label>Pas de temps (s)${inp('dt', F.dt, 7, MAT_R && MAT_R.dtSuggest ? '≤ ' + fmt(MAT_R.dtSuggest, 5) : '')}</label><label>Durée simulée (s)${inp('dur', F.dur, 7)}</label><label class="wide">Événements / lois temporelles${inp('events', F.events, 40, 'ex. fermeture EQ002 de 100 % à 0 % en 2 s à t = 1 s')}</label></div>${MAT_R && MAT_R.dtSuggest ? `<p class="sm">Suggestion calculée : Δt ≤ L/a minimal = ${fmt(MAT_R.dtSuggest, 5)} s (vitesse d'onde estimée par tube, voir onglet Contrôle de l'Excel).</p>` : '<p class="sm">La suggestion de pas de temps apparaît quand le module de compressibilité du fluide et les données de paroi sont connus.</p>'}` : ''}
+  ${F.an.Th ? `<h3>Thermique</h3><div class="form"><label>Température d'entrée (°C)${inp('Tin', F.Tin, 6)}</label><label>Épaisseur d'isolant (mm)${inp('insE', F.insE, 6)}</label><label>Conductivité isolant (W/(m·K))${inp('insL', F.insL, 6)}</label><label>Coefficient d'échange externe (W/(m²·K))${inp('h', F.h, 6)}</label><label>Température ambiante (°C)${inp('Tamb', F.Tamb, 6)}</label><label>Source de chaleur par tube (W)${inp('heat', F.heat, 6)}</label></div>` : ''}`;
+}
+function bindDataForm() {
+  $$('#panel [data-an]').forEach(c => c.onchange = () => { App.F.an[c.dataset.an] = c.checked; refresh(); });
+  $$('#panel [data-f]').forEach(c => c.onchange = () => { App.F[c.dataset.f] = c.value; if (c.dataset.f === 'mat') App.F.matSet = true; refresh(); });
+  $$('#panel [data-m]').forEach(c => c.onchange = () => { App.F.man[c.dataset.m] = c.value; refresh(); });
+}
+function refTableHtml() {
+  return `<h3>Référentiel des données d'entrée Flowmaster</h3><p class="sm">B = bloquant pour l'analyse, P = améliore la précision. Origine : a = extrait du STEP, b = calculé, c = défaut sourcé, d = saisie obligatoire. Ce référentiel pilote la colonne « Criticité » de l'onglet « À compléter ».</p>
+  <table class="grid ref"><thead><tr><th>Composant</th><th>Paramètre</th><th>Nom Flowmaster</th><th>Unité</th><th>Perm.</th><th>Trans.</th><th>Therm.</th><th>Comp.</th><th>Origine</th><th>Méthode / source</th></tr></thead><tbody>${REF.map(r => `<tr>${r.map((x, i) => `<td class="${i >= 4 && i <= 7 ? 'c ' + (x === 'B' ? 'bB' : x === 'P' ? 'bP' : '') : ''}">${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+/* ---------- Inspecteur (élément sélectionné) ---------- */
+function select(id) { App.sel = id; renderInspector(); viewer.draw(); $$('#panel tr[data-id]').forEach(tr => tr.classList.toggle('sel', tr.dataset.id === id)); }
+function findItem(id) { const R = MAT_R; if (!R) return null; for (const g of ['pipes', 'bends', 'tees', 'reds', 'eqs']) { const it = R[g].find(x => x.c.id === id); if (it) return [g, it]; } const n = R.nodes.find(x => x.n.id === id); return n ? ['node', n] : null; }
+function renderInspector() {
+  const box = $('#insp'); const f = App.sel && findItem(App.sel);
+  if (!f) { box.innerHTML = '<p class="hint">Cliquez un élément dans la vue 3D ou dans la liste des composants.</p>'; return; }
+  const [g, it] = f;
+  if (g === 'node') { const r = it; box.innerHTML = `<h4>${r.n.id} — ${r.type}</h4><table class="kv"><tr><td>X ; Y ; Z (mm)</td><td>${r.n.p.map(v => fmt(v, 2)).join(' ; ')}</td></tr><tr><td>Altitude (m)</td><td>${fmt(r.alt.v, 4)}</td></tr><tr><td>Composants</td><td>${r.comps}</td></tr>${r.bct ? `<tr><td>Condition aux limites</td><td>${cellV(r.bct)} ${r.bcv && r.bcv.v != null ? fmt(r.bcv.v) + ' ' + r.bcu : ''}</td></tr>` : ''}</table>${r.bct ? '<p class="sm">Saisie dans l\'onglet « Nœuds & CL ».</p>' : ''}`; return; }
+  const c = it.c, v = it.v; const ov = App.ov[c.id] || {};
+  const EDIT = { pipes: ['Di', 'De', 'e', 'L', 'mat', 'eps', 'Q'], bends: ['Di', 'R', 'theta', 'mat', 'eps', 'Q'], tees: ['rj', 'cfg'], reds: ['D1', 'D2', 'Q'], eqs: [] }[g];
+  const LAB = { Di: 'Diamètre intérieur (mm) (Diameter)', De: 'Diamètre extérieur (mm)', e: 'Épaisseur (mm) (Wall thickness)', L: 'Longueur (m) (Length)', dz: 'Dénivelé (m)', A: 'Section (mm²)', mat: 'Matériau (Material)', eps: 'Rugosité absolue (mm)', epsRel: 'Rugosité relative (–)', E: "Module d'Young (GPa)", nu: 'Poisson (–)', anchor: 'Ancrage', kw: 'Conductivité paroi (W/(m·K))', R: 'Rayon de cintrage (mm) (Bend radius)', RD: 'R/D (–)', theta: 'Angle (°) (Bend angle)', Ldev: 'Longueur développée (m)', type: 'Type', corr: 'Corrélation suggérée', K: 'K indicatif (–)', Le: 'Longueur équivalente (m)', D1: 'D1 (mm)', D2: 'D2 (mm)', D3: 'D dérivation (mm)', r31: 'A_dériv./A_princ. (–)', r21: 'A_princ.2/A_princ.1 (–)', ang: 'Angle du piquage (°)', rj: 'Rayon de raccordement r/D (–)', cfg: 'Configuration', Krun: 'K passage direct (–)', Kbr: 'K dérivation (–)', sens: 'Sens', ratio: 'A2/A1 (–)', beta: 'β (–)', cone: 'Angle de cône (°)', vol: 'Volume (L)', n1: 'Nœud principal 1', n2: 'Nœud principal 2', n3: 'Nœud dérivé' };
+  let h = `<h4>${c.id} — ${TYPE_LABEL[c.kind] || c.kind}${c.sub2 ? ' ' + c.sub2 : ''} <span class="sm">${esc(c.bodyName || '')}</span></h4><div class="sm">Nœuds : ${c.nodes.join(' → ')} · ${statusText(MAT_R, c.id)}</div><table class="kv">`;
+  if (g === 'eqs') { h += `<tr><td colspan="2">Éditer dans l'onglet « Équipements ».</td></tr>`; v.ports.forEach((p, i) => h += `<tr><td>DN ${c.ports[i].node}</td><td>${cellV(p, 2)}</td></tr>`); for (const p of v.params) h += `<tr><td>${esc(p.label)}</td><td>${cellV(p)}</td></tr>`; }
+  else for (const k of Object.keys(v)) {
+    if (['insE', 'insL', 'h', 'Tamb', 'heat'].includes(k) && !App.F.an.Th) continue;
+    if (['E', 'nu', 'anchor'].includes(k) && !App.F.an.T) continue;
+    const x = v[k]; if (typeof x !== 'object' && !EDIT.includes(k)) { h += `<tr><td>${LAB[k] || k}</td><td>${esc(x)}</td></tr>`; continue; }
+    if (EDIT.includes(k)) {
+      if (k === 'mat') h += `<tr><td>${LAB[k]}</td><td><select data-ov="mat"><option value="">(global : ${esc(App.F.mat)})</option>${MATERIALS.map(m => `<option${ov.mat === m[0] ? ' selected' : ''}>${m[0]}</option>`).join('')}</select> ${badge(x)}</td></tr>`;
+      else if (k === 'cfg') h += `<tr><td>${LAB[k]}</td><td><select data-ov="cfg"><option value="">— à préciser —</option>${['Convergent', 'Divergent', 'Variable (selon le solveur)'].map(o => `<option${ov.cfg === o ? ' selected' : ''}>${o}</option>`).join('')}</select> ${badge(x)}</td></tr>`;
+      else h += `<tr><td>${LAB[k] || k}</td><td><input data-ov="${k}" value="${esc(ov[k] || '')}" placeholder="${x && x.v != null ? fmt(x.v, 4) : 'À COMPLÉTER'}" size="9"> ${badge(x)}</td></tr>`;
+    } else h += `<tr><td>${LAB[k] || k}</td><td>${cellV(x, 4)}</td></tr>`;
+  }
+  if (EDIT.includes('Q')) h += `<tr><td>Débit de contrôle (m³/h)</td><td><input data-ov="Q" value="${esc(ov.Q || '')}" placeholder="${App.F.Q ? 'global ' + App.F.Q : ''}" size="9"></td></tr>`;
+  h += '</table><p class="sm">Survolez une pastille pour voir l\'origine et l\'entité STEP. Un champ vide reprend la valeur extraite/par défaut.</p>';
+  box.innerHTML = h;
+  $$('#insp [data-ov]').forEach(inp => inp.onchange = () => { const o = (App.ov[c.id] = App.ov[c.id] || {}); if (inp.value === '') delete o[inp.dataset.ov]; else o[inp.dataset.ov] = inp.value; refresh(); });
+}
+
+/* ---------- Vue 3D filaire (canvas 2D, sans dépendance) ---------- */
+const viewer = (() => {
+  const cv = () => $('#view'); let yaw = -0.6, pitch = 0.45, scale = 1, center = [0, 0, 0], pan = [0, 0], prims = [];
+  const COL = { PIPE: '#2f7fc1', BEND: '#e08a1e', TEE: '#8e44ad', JCT: '#c0392b', RED: '#16a085', EQ: '#c0392b' };
+  const basis = () => { const v = App.S.vertical; const i = 'XYZ'.indexOf(v[0]); const U = [0, 0, 0]; U[i] = v[1] === '-' ? -1 : 1; const E = [0, 0, 0]; E[(i + 1) % 3] = 1; const N = V.cross(U, E); return { U, E, N }; };
+  function proj(p) {
+    const c = cv(); const B = basis(); const q = V.sub(p, center); const a = V.dot(q, B.E), b = V.dot(q, B.N), u = V.dot(q, B.U);
+    const x1 = a * Math.cos(yaw) - b * Math.sin(yaw), y1 = a * Math.sin(yaw) + b * Math.cos(yaw);
+    const sx = x1, sy = u * Math.cos(pitch) - y1 * Math.sin(pitch), d = y1 * Math.cos(pitch) + u * Math.sin(pitch);
+    return [c.width / 2 + pan[0] + sx * scale, c.height / 2 + pan[1] - sy * scale, d];
+  }
+  function geom() {
+    const m = App.model; prims = []; if (!m) return;
+    const byId = Object.fromEntries(m.nodes.map(n => [n.id, n]));
+    for (const c of m.comps) {
+      let pts = [];
+      if (c.kind === 'PIPE' || (c.kind === 'RED' && c.sub2 !== 'brusque')) pts = [c.a, c.b];
+      else if (c.kind === 'BEND' && c.sub2 === 'cintré') { const n = Math.max(4, Math.ceil(c.theta / 7.5)); for (let i = 0; i <= n; i++) { const ph = c.phi0 + c.theta / DEG * i / n; pts.push(V.add(c.C, V.mul(V.add(V.mul(c.ex, Math.cos(ph)), V.mul(c.ey, Math.sin(ph))), c.R))); } }
+      else if (c.p) pts = [c.p];
+      else if (c.kind === 'EQ' && c.bbox) { const b = c.bbox; const C = [[b[0], b[1], b[2]], [b[3], b[1], b[2]], [b[3], b[4], b[2]], [b[0], b[4], b[2]], [b[0], b[1], b[5]], [b[3], b[1], b[5]], [b[3], b[4], b[5]], [b[0], b[4], b[5]]]; prims.push({ c, box: C }); continue; }
+      prims.push({ c, pts });
+    }
+    for (const n of m.nodes) prims.push({ node: n });
+  }
+  function fit() {
+    geom(); const m = App.model; const cc = cv(); const dpr0 = window.devicePixelRatio || 1; cc.width = Math.round(cc.clientWidth * dpr0); cc.height = Math.round(cc.clientHeight * dpr0); if (!m || !m.nodes.length) return;
+    let lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+    const acc = (p) => { for (let k = 0; k < 3; k++) { lo[k] = Math.min(lo[k], p[k]); hi[k] = Math.max(hi[k], p[k]); } };
+    m.nodes.forEach(n => acc(n.p)); m.comps.forEach(c => { if (c.bbox) { acc(c.bbox.slice(0, 3)); acc(c.bbox.slice(3)); } });
+    center = V.mul(V.add(lo, hi), 0.5); const ext = Math.max(1, V.dist(lo, hi)); const c = cv(); scale = 0.8 * Math.min(c.width, c.height) / ext; pan = [0, 0];
+  }
+  function draw() {
+    const c = cv(); if (!c) return; const ctx = c.getContext('2d'); const W = c.clientWidth, H = c.clientHeight; const dpr = window.devicePixelRatio || 1;
+    if (c.width !== Math.round(W * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c.width, c.height); ctx.scale(dpr, dpr);
+    const m = App.model; const R = MAT_R;
+    if (!m) { ctx.fillStyle = '#889'; ctx.font = '14px system-ui'; ctx.fillText('Vue 3D de contrôle — chargez un STEP', 20, 30); return; }
+    const P = (p) => { const q = proj(p); return [q[0] / dpr, q[1] / dpr]; };
+    // axes
+    const B = basis(); const o = [14 * dpr, (H - 14) * dpr];
+    ctx.lineWidth = 1; ctx.font = '10px system-ui';
+    [['X', [1, 0, 0], '#c33'], ['Y', [0, 1, 0], '#3a3'], ['Z', [0, 0, 1], '#33c']].forEach(([l, d, col]) => { const a = proj(center), b = proj(V.add(center, V.mul(d, 30 / scale))); ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(30, H - 30); ctx.lineTo(30 + (b[0] - a[0]) / dpr, H - 30 + (b[1] - a[1]) / dpr); ctx.stroke(); ctx.fillStyle = col; ctx.fillText(l, 32 + (b[0] - a[0]) / dpr, H - 30 + (b[1] - a[1]) / dpr); });
+    for (const pr of prims) {
+      if (pr.node) continue; const c2 = pr.c; const sel = App.sel === c2.id; const st = R && R.status[c2.id]; const bad = App.showTodo && st && st.B;
+      const col = COL[c2.kind] || '#555';
+      if (pr.box) { const S = pr.box.map(P); ctx.strokeStyle = sel ? '#f1c40f' : col; ctx.lineWidth = sel ? 3 : 1.5; ctx.setLineDash(c2.unknown ? [4, 3] : []); ctx.beginPath(); [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(([a, b]) => { ctx.moveTo(...S[a]); ctx.lineTo(...S[b]); }); ctx.stroke(); ctx.setLineDash([]); const cc = P(V.mul(V.add(pr.box[0], pr.box[6]), 0.5)); ctx.fillStyle = col; ctx.font = 'bold 11px system-ui'; ctx.fillText(c2.id + ' ' + (App.eqType[c2.id] || c2.eqType), cc[0] + 4, cc[1]); continue; }
+      const S = pr.pts.map(P);
+      if (S.length === 1) { const [x, y] = S[0]; ctx.fillStyle = sel ? '#f1c40f' : col; ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x + 6, y); ctx.lineTo(x, y + 6); ctx.lineTo(x - 6, y); ctx.closePath(); ctx.fill(); if (bad) { ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 2; ctx.stroke(); } }
+      else {
+        const w = c2.Di ? Math.max(2, Math.min(9, c2.Di * scale / dpr * 0.25)) : 2.5;
+        if (bad) { ctx.strokeStyle = 'rgba(231,76,60,.35)'; ctx.lineWidth = w + 7; ctx.beginPath(); S.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.stroke(); }
+        ctx.strokeStyle = sel ? '#f1c40f' : col; ctx.lineWidth = sel ? w + 2 : w; ctx.lineCap = 'round'; ctx.setLineDash(c2.odOnly ? [6, 4] : []);
+        ctx.beginPath(); S.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.stroke(); ctx.setLineDash([]);
+      }
+      if (App.showLabels) { const mid = S[Math.floor(S.length / 2)]; const mid2 = S.length > 1 ? [(S[0][0] + S[S.length - 1][0]) / 2, (S[0][1] + S[S.length - 1][1]) / 2] : mid; const q = c2.kind === 'BEND' ? mid : mid2; ctx.fillStyle = '#334'; ctx.font = '10px system-ui'; ctx.fillText(c2.id, q[0] + 5, q[1] - 5); }
+    }
+    for (const pr of prims) {
+      if (!pr.node) continue; const n = pr.node; const [x, y] = P(n.p); const sel = App.sel === n.id;
+      if (n.deg === 1) { const b = App.bc[n.id]; ctx.fillStyle = b && b.type ? '#27ae60' : '#fff'; ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 2; ctx.fillRect(x - 5, y - 5, 10, 10); ctx.strokeRect(x - 5, y - 5, 10, 10); }
+      else { ctx.fillStyle = sel ? '#f1c40f' : '#222'; ctx.beginPath(); ctx.arc(x, y, sel ? 4 : 2.3, 0, 7); ctx.fill(); }
+      if (App.showLabels && !n.split) { ctx.fillStyle = '#666'; ctx.font = '9px system-ui'; ctx.fillText(n.id, x + 5, y + 11); }
+    }
+  }
+  function pick(mx, my) {
+    let best = null; const dpr = window.devicePixelRatio || 1; const P = (p) => { const q = proj(p); return [q[0] / dpr, q[1] / dpr]; };
+    const segD = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1]; const l = dx * dx + dy * dy; let t = l ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy); };
+    for (const pr of prims) {
+      let d = Infinity, id;
+      if (pr.node) { const s = P(pr.node.p); d = Math.hypot(s[0] - mx, s[1] - my) - 2; id = pr.node.id; }
+      else if (pr.box) { const S = pr.box.map(P); [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(([a, b]) => d = Math.min(d, segD([mx, my], S[a], S[b]))); id = pr.c.id; }
+      else { const S = pr.pts.map(P); if (S.length === 1) d = Math.hypot(S[0][0] - mx, S[0][1] - my) - 3; else for (let i = 0; i + 1 < S.length; i++) d = Math.min(d, segD([mx, my], S[i], S[i + 1])); id = pr.c.id; }
+      if (d < 8 && (!best || d < best.d)) best = { d, id };
+    }
+    return best && best.id;
+  }
+  function init() {
+    const c = cv(); let drag = null;
+    c.addEventListener('mousedown', e => { drag = { x: e.clientX, y: e.clientY, b: e.button, shift: e.shiftKey, moved: false }; });
+    window.addEventListener('mouseup', e => { if (drag && !drag.moved) { const r = c.getBoundingClientRect(); const id = pick(e.clientX - r.left, e.clientY - r.top); if (id) select(id); } drag = null; });
+    window.addEventListener('mousemove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true; drag.x = e.clientX; drag.y = e.clientY; const dpr = window.devicePixelRatio || 1; if (drag.b === 2 || drag.shift) { pan[0] += dx * dpr; pan[1] += dy * dpr; } else { yaw += dx * 0.01; pitch = Math.max(-1.55, Math.min(1.55, pitch + dy * 0.01)); } draw(); });
+    c.addEventListener('contextmenu', e => e.preventDefault());
+    c.addEventListener('wheel', e => { e.preventDefault(); const f = Math.exp(-e.deltaY * 0.0015); const r = c.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1; const mx = (e.clientX - r.left) * dpr - c.width / 2 - pan[0], my = (e.clientY - r.top) * dpr - c.height / 2 - pan[1]; pan[0] -= mx * (f - 1); pan[1] -= my * (f - 1); scale *= f; draw(); }, { passive: false });
+    window.addEventListener('resize', () => draw());
+  }
+  const views = { iso: [-0.6, 0.45], top: [0, 1.5707], front: [0, 0], side: [Math.PI / 2, 0] };
+  return { fit: () => { fit(); draw(); }, draw: () => { geom(); draw(); }, init, setView: (k) => { [yaw, pitch] = views[k]; draw(); } };
+})();
+
+/* ---------- Export Excel ---------- */
+function exportXlsx() {
+  const m = App.model, R = materialize(); if (!m) return;
+  const hdr = (arr) => arr.map(x => ({ v: x, s: 'hdr' }));
+  const V2 = (x) => x ? { v: x.v == null ? (x.o === 'NA' ? '' : 'À COMPLÉTER') : x.v, s: x.o } : '';
+  const O2 = (x) => x ? { v: origText(x), s: x.o === 'TODO' ? 'TODO' : 'txt' } : '';
+  const pairs = (cols) => { const h = []; for (const [, label] of cols) h.push(label, 'Origine'); return h; };
+  const vals = (v, cols) => { const r = []; for (const [k] of cols) { r.push(V2(v[k]), O2(v[k])); } return r; };
+  const widths = (base, cols) => base.concat(...cols.map(() => [14, 34]));
+  const sheets = [];
+  const an = Object.entries(ANALYSES).filter(([k]) => App.F.an[k]).map(([, l]) => l).join(' ; ') || 'aucune';
+  const lists = { mat: "'Listes'!$A$2:$A$" + (MATERIALS.length + 1), anc: "'Listes'!$B$2:$B$4", bc: "'Listes'!$C$2:$C$5", eq: "'Listes'!$D$2:$D$" + (EQ_TYPES.length + 1), cfg: "'Listes'!$E$2:$E$4" };
+  // 1. Synthèse
+  const cnt = [['Tubes (Pipe)', R.pipes.length], ['Coudes (Bend)', R.bends.length], ['Tés et jonctions (Tee/Junction)', R.tees.length], ['Variations de section', R.reds.length], ['Équipements', R.eqs.length], ['Nœuds', m.nodes.length], ['Extrémités libres', m.topo.free], ['Boucles indépendantes', m.topo.loops], ['Sous-réseaux', m.topo.subs]];
+  const syn = [[{ v: 'Dossier de données d\'entrée Simcenter Flowmaster', s: 'title' }], [{ v: 'Généré depuis la maquette STEP — ceci n\'est pas un fichier réseau natif Flowmaster : les valeurs sont à saisir ou à importer par script.', s: 'sub' }], [],
+    ['Fichier source', App.fileName], ['Schéma STEP', m.header.schema], ['Système d\'origine', m.header.system || '—'], ['Date de génération', new Date().toLocaleString('fr-FR')], ['Unité de longueur CAO', m.unit + (App.S.unitOverride !== 'auto' ? ' — FORCÉE : ' + App.S.unitOverride : '')], ['Unité d\'angle CAO', m.angUnit], ['Axe vertical', App.S.vertical], ['Tolérance de raccordement (mm)', +App.S.tol], ['Type(s) d\'analyse', an], ['Fluide', FLUIDS[App.F.fluid].name + ' à ' + App.F.T + ' °C, ' + App.F.P + ' bar abs'], ['Longueur développée totale (m)', rnd(R.tot.L / 1000, 4)], ['Volume interne (L)', rnd(R.tot.Vol / 1e6, 4)],
+    ['Taux de complétude (paramètres bloquants renseignés)', { v: Math.round(R.compl * 1000) / 10 + ' %  (' + R.ok + ' / ' + R.req + ')', s: R.compl < 1 ? 'TODO' : 'STEP' }], [],
+    [{ v: 'Nombre de composants', s: 'sub' }], ...cnt.map(([a, b]) => [a, b]), [],
+    [{ v: 'Code couleur', s: 'sub' }], [{ v: 'Extrait STEP', s: 'STEP' }, 'valeur lue sur une surface analytique ; l\'entité #n est indiquée dans la colonne Origine'], [{ v: 'Calculé', s: 'CALC' }, 'déduit par calcul de valeurs extraites ou saisies'], [{ v: 'Par défaut', s: 'DEF' }, 'valeur proposée avec sa source, à confirmer'], [{ v: 'Saisi utilisateur', s: 'USER' }, 'renseigné dans l\'outil'], [{ v: 'À COMPLÉTER', s: 'TODO' }, 'manquant et requis par une analyse cochée'], [{ v: 'Non requis', s: 'NA' }, 'non nécessaire pour les analyses cochées'], [],
+    [{ v: 'Conventions', s: 'sub' }], ['Longueurs des tubes', 'mesurées jusqu\'au point d\'intersection des axes aux tés et coudes à onglet (composants de longueur nulle)'], ['Amont / aval', 'sens de parcours de la numérotation (depuis l\'extrémité libre de coordonnées minimales) — à confirmer avec le sens réel d\'écoulement'], ['Coudes', 'la longueur développée R·θ n\'est pas incluse dans les tubes adjacents : selon le composant Flowmaster utilisé, l\'ajouter aux tubes voisins en transitoire / thermique'], ['Nœuds coïncidents', 'les bras des tés, onglets et variations brusques ont des nœuds distincts aux mêmes coordonnées'], [],
+    [{ v: 'Alertes (' + m.alerts.length + ')', s: 'sub' }], ...m.alerts.map(a => [{ v: { err: 'Bloquant', warn: 'Attention', info: 'Info' }[a.lvl], s: a.lvl === 'err' ? 'TODO' : a.lvl === 'warn' ? 'DEF' : 'txt' }, a.msg])];
+  sheets.push({ name: 'Synthèse', cols: [46, 120], rows: syn });
+  // 2. Nœuds
+  const nr = [hdr(['ID', 'X (mm)', 'Y (mm)', 'Z (mm)', 'Altitude (m) (Elevation)', 'Origine', 'Type', 'Composants raccordés', 'Condition aux limites', 'Valeur', 'Unité', 'Sous-réseau'])];
+  for (const r of R.nodes) nr.push([r.n.id, { v: rnd(r.n.p[0], 4), s: 'STEP' }, { v: rnd(r.n.p[1], 4), s: 'STEP' }, { v: rnd(r.n.p[2], 4), s: 'STEP' }, V2(r.alt), { v: 'Coordonnées : extrait STEP (coïncidence des extrémités d\'axe) ; altitude calculée', s: 'txt' }, r.type, r.comps, r.bct ? V2(r.bct) : '', r.bcv ? V2(r.bcv) : '', r.bcu || '', r.n.sub]);
+  sheets.push({ name: 'Nœuds', cols: [9, 12, 12, 12, 13, 40, 30, 26, 24, 12, 9, 10], rows: nr, freeze: 1, header: 1, filter: true, lists: [{ col: 8, from: 2, to: nr.length, ref: lists.bc }] });
+  // 3. Tubes
+  const PC = [['Di', 'Diamètre intérieur Di (mm) (Diameter)'], ['De', 'Diamètre extérieur De (mm)'], ['e', 'Épaisseur e (mm) (Wall thickness)'], ['L', 'Longueur (m) (Length)'], ['dz', 'Dénivelé aval − amont (m)'], ['A', 'Section (mm²) (Area)'], ['vol', 'Volume interne (L)'], ['mat', 'Matériau (Material)'], ['eps', 'Rugosité absolue (mm) (Absolute roughness)'], ['epsRel', 'Rugosité relative ε/Di (–)'], ['E', "Module d'Young (GPa) (Young's modulus)"], ['nu', "Coefficient de Poisson (–) (Poisson's ratio)"], ['anchor', 'Ancrage (Pipe constraint)'], ['insE', "Épaisseur d'isolant (mm) (Insulation)"], ['insL', 'Conductivité isolant (W/(m·K))']];
+  const pr = [hdr(['ID', 'Nœud amont', 'Nœud aval', 'Corps CAO', ...pairs(PC), 'Statut'])];
+  for (const it of R.pipes) pr.push([it.c.id, it.c.nodes[0], it.c.nodes[1], it.c.bodyName, ...vals(it.v, PC), statusText(R, it.c.id)]);
+  if (pr.length === 1) pr.push([{ v: 'Aucun tube reconnu.', s: 'NA' }]);
+  sheets.push({ name: 'Tubes', cols: widths([8, 10, 10, 24], PC).concat([24]), rows: pr, freeze: 1, header: 1, filter: true, lists: [{ col: 4 + 2 * 7, from: 2, to: pr.length, ref: lists.mat }, { col: 4 + 2 * 12, from: 2, to: pr.length, ref: lists.anc }] });
+  // 4. Coudes
+  const BC = [['type', 'Type'], ['Di', 'Diamètre intérieur Di (mm) (Diameter)'], ['De', 'Diamètre extérieur De (mm)'], ['R', 'Rayon de cintrage R (mm) (Bend radius)'], ['RD', 'R/D (–) (Radius ratio)'], ['theta', 'Angle (°) (Bend angle)'], ['Ldev', 'Longueur développée (m)'], ['mat', 'Matériau'], ['eps', 'Rugosité (mm) (Roughness)'], ['corr', 'Corrélation suggérée'], ['K', 'K indicatif (–)'], ['Le', 'Longueur équivalente indicative (m)']];
+  const br = [hdr(['ID', 'Nœud amont', 'Nœud aval', 'Corps CAO', ...pairs(BC), 'Statut'])];
+  for (const it of R.bends) br.push([it.c.id, it.c.nodes[0], it.c.nodes[1], it.c.bodyName || '', ...vals(it.v, BC), statusText(R, it.c.id)]);
+  if (br.length === 1) br.push([{ v: 'Aucun coude reconnu dans la maquette.', s: 'NA' }]);
+  sheets.push({ name: 'Coudes', cols: widths([8, 10, 10, 24], BC).concat([24]), rows: br, freeze: 1, header: 1, filter: true, lists: [{ col: 4 + 2 * 7, from: 2, to: br.length, ref: lists.mat }] });
+  // 5. Tés
+  const TC = [['D1', 'Di principal 1 (mm)'], ['D2', 'Di principal 2 (mm)'], ['D3', 'Di dérivé (mm)'], ['r31', 'A dérivé / A principal 1 (–) (Area ratio)'], ['r21', 'A principal 2 / A principal 1 (–)'], ['ang', 'Angle du piquage (°) (Branch angle)'], ['rj', 'Rayon de raccordement r/D (–)'], ['cfg', 'Configuration (convergent / divergent)'], ['corr', 'Corrélation suggérée'], ['Krun', 'K passage direct indicatif (–)'], ['Kbr', 'K dérivation indicatif (–)']];
+  const tr = [hdr(['ID', 'Nœud principal 1', 'Nœud principal 2', 'Nœud dérivé', ...pairs(TC), 'Statut'])];
+  for (const it of R.tees) tr.push([it.c.id, it.v.n1, it.v.n2, it.v.n3, ...vals(it.v, TC), statusText(R, it.c.id)]);
+  if (tr.length === 1) tr.push([{ v: 'Aucun té ni jonction reconnu.', s: 'NA' }]);
+  sheets.push({ name: 'Tés et jonctions', cols: widths([8, 11, 11, 11], TC).concat([24]), rows: tr, freeze: 1, header: 1, filter: true, lists: [{ col: 4 + 2 * 7, from: 2, to: tr.length, ref: lists.cfg }] });
+  // 6. Variations de section
+  const RC = [['type', 'Type (brusque / progressive)'], ['sens', 'Sens'], ['D1', 'D1 amont (mm) (Inlet diameter)'], ['D2', 'D2 aval (mm) (Outlet diameter)'], ['ratio', 'Rapport de sections A2/A1 (–)'], ['beta', 'β = D petit / D grand (–)'], ['cone', 'Angle de cône total (°) (Cone angle)'], ['L', 'Longueur (mm) (Length)'], ['K', 'K indicatif (–)']];
+  const rr = [hdr(['ID', 'Nœud amont', 'Nœud aval', 'Corps CAO', ...pairs(RC), 'Statut'])];
+  for (const it of R.reds) rr.push([it.c.id, it.c.nodes[0], it.c.nodes[1], it.c.bodyName || '', ...vals(it.v, RC), statusText(R, it.c.id)]);
+  if (rr.length === 1) rr.push([{ v: 'Aucune variation de section reconnue.', s: 'NA' }]);
+  sheets.push({ name: 'Variations de section', cols: widths([8, 10, 10, 24], RC).concat([24]), rows: rr, freeze: 1, header: 1, filter: true });
+  // 7. Équipements (format long : une ligne par paramètre)
+  const er = [hdr(['ID', 'Nom CAO', 'Type identifié', 'Origine du type', 'Nœuds', 'Paramètre', 'Nom Flowmaster', 'Unité', 'Valeur', 'Origine', 'Criticité'])];
+  for (const it of R.eqs) {
+    const c = it.c, v = it.v; const base = [c.id, c.bodyName, V2(v.type), O2(v.type), c.nodes.join(' → ') || 'non raccordé'];
+    v.ports.forEach((p, i) => er.push([...base, 'DN raccord ' + (i + 1) + ' (' + c.ports[i].node + ')', 'Inlet/outlet diameter', 'mm', V2(p), O2(p), '']));
+    if (v.suggest) er.push([...base, 'Sens', '—', '—', V2(v.suggest), O2(v.suggest), '']);
+    if (v.zb) er.push([...base, 'Altitude du fond', 'Base elevation', 'm', V2(v.zb), O2(v.zb), '']);
+    for (const p of v.params) er.push([...base, p.label, p.fm, p.unit, V2(p), O2(p), p.crit === 'B' ? 'Bloquant' : p.crit === 'P' ? 'Améliore la précision' : '']);
+  }
+  if (er.length === 1) er.push([{ v: 'Aucun équipement identifié (vérifier les mots-clés ou le classement des corps).', s: 'NA' }]);
+  sheets.push({ name: 'Équipements', cols: [8, 26, 20, 34, 16, 40, 24, 12, 26, 40, 20], rows: er, freeze: 1, header: 1, filter: true, lists: [{ col: 2, from: 2, to: er.length, ref: lists.eq }] });
+  // 8. Fluide
+  const fr = [hdr(['Paramètre', 'Valeur', 'Origine'])];
+  for (const k in R.fluid) fr.push([R.fluid[k].label, V2(R.fluid[k]), O2(R.fluid[k])]);
+  fr.push([], [{ v: 'Dépendance à la température — ' + FLUIDS[App.F.fluid].name, s: 'sub' }]);
+  if (App.F.fluid !== 'manual') {
+    const fl = FLUIDS[App.F.fluid]; const [t0, t1] = fl.range; const step = (t1 - t0) <= 100 ? 10 : 20;
+    fr.push(hdr(['T (°C)', 'ρ (kg/m³)', 'μ (Pa·s)', 'Cp (J/(kg·K))', 'λ (W/(m·K))', 'K (GPa)', 'Pv (kPa)']));
+    for (let T = t0; T <= t1 + 1e-9; T += step) { const p = fl.f(T, +App.F.P || 1); fr.push([T, ...['rho', 'mu', 'cp', 'lam', 'K', 'pv'].map(k => p[k] == null ? { v: 'non fourni', s: 'NA' } : { v: rnd(p[k], k === 'mu' ? 8 : 4), s: 'DEF' })]); }
+    fr.push(['Source', { v: fl.f(t0, 1).src, s: 'txt' }]);
+  } else fr.push(['Propriétés saisies manuellement : renseigner la dépendance en température dans Flowmaster si nécessaire.']);
+  sheets.push({ name: 'Fluide', cols: [52, 16, 60, 14, 14, 12, 12], rows: fr, freeze: 1, header: 1 });
+  // 9. Conditions aux limites et scénarios
+  const cr = [hdr(['Nœud', 'Altitude (m)', 'Composant raccordé', 'Type de condition (Boundary)', 'Origine', 'Valeur', 'Unité', 'Origine', "Température d'entrée (°C)", 'Origine'])];
+  for (const r of R.free) cr.push([r.n.id, rnd(r.alt.v, 5), r.comps, V2(r.bct), O2(r.bct), V2(r.bcv), r.bcu, O2(r.bcv), V2(r.Tin), O2(r.Tin)]);
+  const cfrom = 2, cto = cr.length;
+  cr.push([], [{ v: 'Scénario / simulation', s: 'sub' }], hdr(['Paramètre', 'Valeur', 'Origine']));
+  cr.push(['Type(s) d\'analyse', an, 'Saisi utilisateur']);
+  if (App.F.an.T) { cr.push(['Pas de temps (s) (Time step)', V2(R.sim.dt), O2(R.sim.dt)]); if (R.dtSuggest) cr.push(['Suggestion : Δt ≤ min(L/a) (s)', { v: rnd(R.dtSuggest, 6), s: 'CALC' }, 'Calculé – vitesse d\'onde par tube, voir onglet Contrôle']); cr.push(['Durée simulée (s) (Simulation time)', V2(R.sim.dur), O2(R.sim.dur)], ['Événements / lois temporelles', V2(R.sim.events), O2(R.sim.events)], ['Ancrage des tubes (global)', V2(R.sim.anchor), O2(R.sim.anchor)]); }
+  else cr.push(['Transitoire', { v: 'non coché', s: 'NA' }, '']);
+  cr.push(['Débit nominal de contrôle (m³/h)', V2(R.sim.Q), O2(R.sim.Q)]);
+  sheets.push({ name: 'CL et scénarios', cols: [30, 16, 22, 26, 30, 14, 10, 30, 16, 30], rows: cr, freeze: 1, header: 1, lists: [{ col: 3, from: cfrom, to: cto, ref: lists.bc }] });
+  // 10. Thermique (si coché)
+  if (App.F.an.Th) {
+    const HC = [['kw', 'Conductivité paroi (W/(m·K))'], ['e', 'Épaisseur paroi (mm)'], ['insE', "Épaisseur d'isolant (mm)"], ['insL', 'Conductivité isolant (W/(m·K))'], ['h', "Coef. d'échange externe (W/(m²·K)) (External HTC)"], ['Tamb', 'Température ambiante (°C)'], ['heat', 'Source de chaleur (W)']];
+    const hr = [hdr(['ID', 'Type', 'Nœud amont', 'Nœud aval', ...pairs(HC)])];
+    for (const it of [...R.pipes, ...R.bends]) hr.push([it.c.id, TYPE_LABEL[it.c.kind], it.c.nodes[0], it.c.nodes[1], ...vals(it.v, HC)]);
+    sheets.push({ name: 'Thermique', cols: widths([8, 10, 10, 10], HC), rows: hr, freeze: 1, header: 1, filter: true });
+  }
+  // 11. À compléter
+  const tr2 = [hdr(['Criticité', 'Onglet', 'ID', 'Paramètre', 'Remarque'])];
+  for (const t of R.todo) tr2.push([{ v: t.crit === 'B' ? 'Bloquant pour le calcul' : 'Améliore la précision', s: t.crit === 'B' ? 'TODO' : 'DEF' }, t.sheet, t.id, t.label, t.note || '']);
+  if (!R.todo.length) tr2.push(['Aucune donnée manquante pour les analyses cochées.']);
+  sheets.push({ name: 'À compléter', cols: [24, 24, 9, 42, 60], rows: tr2, freeze: 1, header: 1, filter: true });
+  // 12. Contrôle de vraisemblance
+  const hasQ = R.ctrl.some(x => x.vel != null), hasA = R.ctrl.some(x => x.a != null);
+  if (hasQ || hasA) {
+    const kr = [[{ v: 'CONTRÔLE DE VRAISEMBLANCE — estimation de premier niveau (Colebrook + K Crane TP-410), ce n\'est PAS un résultat Flowmaster', s: 'sub' }], hdr(['ID', 'Type', 'Débit (m³/h)', 'D réf. (mm)', 'Vitesse (m/s)', 'Re (–)', 'ε/D (–)', 'f Darcy (–)', 'K (–)', 'ΔP frottement (kPa)', 'ΔP singulière (kPa)', 'ΔP totale (kPa)', 'ρ·g·Δz (kPa)', "Vitesse d'onde a (m/s)", 'L/a (s)', 'Remarque'])];
+    let tot = 0;
+    for (const x of R.ctrl) { if (x.vel == null && x.a == null) continue; if (x.dp) tot += x.dp; const C = (v, n) => v == null ? '' : { v: rnd(v, n), s: 'CALC' }; kr.push([x.c.id, TYPE_LABEL[x.c.kind] + (x.c.sub2 ? ' ' + x.c.sub2 : ''), x.Q, rnd(x.D, 3), C(x.vel, 3), C(x.Re, 0), C(x.rel, 7), C(x.f, 5), C(x.K, 4), C(x.dpf != null ? x.dpf / 1000 : null, 4), C(x.dps != null ? x.dps / 1000 : null, 4), C(x.dp != null ? x.dp / 1000 : null, 4), C(x.dzst != null ? x.dzst / 1000 : null, 4), C(x.a, 1), C(x.tL, 6), [x.note, x.aNote].filter(Boolean).join(' ; ')]); }
+    if (hasQ) kr.push([], ['Somme des ΔP (kPa, composants en série supposés)', '', '', '', '', '', '', '', '', '', '', { v: rnd(tot / 1000, 3), s: 'CALC' }]);
+    sheets.push({ name: 'Contrôle', cols: [10, 18, 11, 11, 11, 11, 11, 11, 9, 13, 13, 13, 12, 13, 11, 44], rows: kr, freeze: 2, header: 2, filter: false });
+  }
+  // 13. Corps CAO (traçabilité) + Référentiel + Listes
+  const cb = [hdr(['Corps (produit)', 'Chemin d\'assemblage', 'Entité solide', 'Type', 'Faces par type', 'Primitives reconnues', 'Classement', 'Remarques'])];
+  for (const b of m.bodies) cb.push([b.name || '(sans nom)', b.path, '#' + b.brep, b.solid ? 'Solide' : 'Surfacique', Object.entries(b.counts).map(([k, n]) => k + ' ' + n).join(' · '), b.nPrims, b.cls + (b.kw ? ' (mot-clé « ' + b.kw + ' »)' : ''), (b.notes || []).join(' ; ')]);
+  sheets.push({ name: 'Corps CAO', cols: [28, 40, 10, 11, 34, 11, 28, 60], rows: cb, freeze: 1, header: 1, filter: true });
+  const rf = [hdr(['Composant', 'Paramètre', 'Nom Flowmaster', 'Unité', 'Permanent', 'Transitoire', 'Thermique', 'Compressible', 'Origine possible', 'Méthode / source'])];
+  for (const r of REF) rf.push(r.map((x, i) => i >= 4 && i <= 7 ? { v: x, s: x === 'B' ? 'TODO' : x === 'P' ? 'DEF' : '' } : x));
+  rf.push([], ['B = bloquant, P = améliore la précision ; a = extrait STEP, b = calculé, c = défaut sourcé, d = saisie utilisateur']);
+  sheets.push({ name: 'Référentiel', cols: [20, 38, 26, 14, 11, 11, 11, 12, 18, 70], rows: rf, freeze: 1, header: 1, filter: true });
+  const L = [hdr(['Matériaux', 'Ancrage', 'Conditions aux limites', "Types d'équipement", 'Configuration té'])];
+  const nL = Math.max(MATERIALS.length, EQ_TYPES.length); const bcs = Object.keys(BC_UNITS); const cf = ['Convergent', 'Divergent', 'Variable (selon le solveur)'];
+  for (let i = 0; i < nL; i++) L.push([MATERIALS[i] ? MATERIALS[i][0] : '', ANCHORS[i] || '', bcs[i] || '', EQ_TYPES[i] || '', cf[i] || '']);
+  sheets.push({ name: 'Listes', cols: [34, 30, 26, 24, 24], rows: L, freeze: 1, header: 1 });
+  const blob = buildXlsx(sheets);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = App.fileName.replace(/\.(stp|step|p21)$/i, '') + '_donnees_Flowmaster.xlsx';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  setStatus('Excel généré : ' + a.download + ' (' + sheets.length + ' onglets).', 'ok');
+  return blob;
+}
+
+const HELP_HTML = `<h3>Mode d'emploi</h3><ol class="help">
+<li>Ouvrez un fichier STEP (AP203/AP214/AP242) : bouton « Ouvrir un STEP » ou glisser-déposer. Rien n'est envoyé sur un réseau.</li>
+<li>Contrôlez la synthèse et les alertes (onglet Réglages) ; réglez axe vertical, tolérance et unité si besoin.</li>
+<li>Vérifiez la vue 3D : bleu tube, orange coude, vert réduction, violet té, rouge équipement ; halo rouge = données bloquantes manquantes ; carré = extrémité libre.</li>
+<li>Corrigez le classement des corps (onglet Corps CAO) puis « Relancer l'analyse » si un équipement est mal reconnu.</li>
+<li>Cochez le ou les types d'analyse et renseignez fluide, matériau, données transitoires/thermiques (onglet Données de calcul).</li>
+<li>Saisissez les conditions aux limites des extrémités libres (onglet Nœuds & CL).</li>
+<li>Saisissez les caractéristiques des équipements à partir des fiches constructeur (onglet Équipements).</li>
+<li>Cliquez un composant pour corriger ses valeurs (Di, matériau, rugosité…) : l'origine passe à « saisi ».</li>
+<li>Exportez l'Excel ; l'onglet « À compléter » liste ce qui reste à fournir, trié par criticité.</li>
+<li>Saisissez ou importez par script les données dans Flowmaster ; le contrôle de vraisemblance n'est pas un résultat Flowmaster.</li></ol>
+<h3>Limites connues</h3><ul class="help">
+<li>Géométrie maillée (tessellée, B-rep à facettes) et surfaces B-spline : aucune cote n'en est extraite — signalé, jamais masqué. Les flexibles et cintrages libres en B-spline ne sont pas reconnus.</li>
+<li>Tés reconnus par intersection d'axes de cylindres ; le congé de raccordement (r/D) n'est pas extrait. Les jonctions à 4 branches et plus sont signalées sans modèle.</li>
+<li>Coudes : surfaces toriques uniquement ; les coudes « segmentés » en plusieurs onglets sont vus comme une suite d'onglets.</li>
+<li>Réductions excentrées : reconnues comme concentriques si le cône est de révolution, sinon non reconnues.</li>
+<li>Équipements : rattachés aux extrémités libres situées dans leur boîte englobante ; leur sens (aspiration/refoulement) est à confirmer.</li>
+<li>Brides : comptées comme tubes courts (épaisseur = diamètre de bride) ; trous de boulons écartés automatiquement.</li>
+<li>Amont/aval suivent la numérotation, pas le sens réel d'écoulement.</li>
+<li>Pas de lecture des transformations d'échelle, ni des pièces miroir en assemblage hors transformations rigides.</li>
+<li>Propriétés de fluides et matériaux : valeurs usuelles sourcées, à confirmer selon la nuance et la fiche produit ; module de compressibilité et pression de vapeur non fournis pour les eaux glycolées.</li>
+<li>Compressible : traité comme extension (propriétés gaz seulement) ; pas de fichier réseau natif Flowmaster produit (format non public).</li></ul>`;
+
+/* ---------- Démarrage ---------- */
+function init() {
+  $$('.tab').forEach(t => t.onclick = () => { $$('.tab').forEach(x => x.classList.toggle('on', x === t)); renderTab(); });
+  $('#file').onchange = (e) => { if (e.target.files[0]) loadFile(e.target.files[0]); };
+  $('#btnOpen').onclick = () => $('#file').click();
+  $('#btnExport').onclick = exportXlsx;
+  document.addEventListener('dragover', e => { e.preventDefault(); document.body.classList.add('drag'); });
+  document.addEventListener('dragleave', e => { if (e.target === document.documentElement || e.clientX <= 0) document.body.classList.remove('drag'); });
+  document.addEventListener('drop', e => { e.preventDefault(); document.body.classList.remove('drag'); const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
+  $('#chkLbl').onchange = (e) => { App.showLabels = e.target.checked; viewer.draw(); };
+  $('#chkTodo').onchange = (e) => { App.showTodo = e.target.checked; viewer.draw(); };
+  $$('[data-view]').forEach(b => b.onclick = () => viewer.setView(b.dataset.view));
+  $('#btnFit').onclick = () => viewer.fit();
+  viewer.init(); renderTab(); renderInspector(); viewer.draw();
+}
+window.addEventListener('DOMContentLoaded', init);
+
+</script>
+</body>
+</html>

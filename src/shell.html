@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STEP → Données d'entrée Flowmaster</title>
+<style>
+/* ===== Styles : outil d'ingénierie sobre, lisible, dense ===== */
+:root{--ink:#1d2733;--mut:#66707c;--line:#d9dee4;--bg:#f4f6f8;--pan:#fff;--acc:#1f4e78;--acc2:#2f7fc1;--ok:#1e8449;--bad:#c0392b;--warn:#b9770e}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);display:flex;flex-direction:column}
+body.drag::after{content:"Déposez le fichier STEP";position:fixed;inset:10px;border:3px dashed var(--acc2);border-radius:12px;background:rgba(47,127,193,.08);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--acc);z-index:9}
+header{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--acc);color:#fff;flex-wrap:wrap}
+header h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.2px}header h1 small{font-weight:400;opacity:.75;margin-left:6px}
+button{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:5px;padding:5px 11px;cursor:pointer}
+button:hover{border-color:var(--acc2)}button:disabled{opacity:.45;cursor:not-allowed}
+header button{border-color:rgba(255,255,255,.4)}header button.pri{background:#f1c40f;border-color:#f1c40f;font-weight:600}
+.status{flex:1;min-width:200px;font-size:12px;opacity:.95}.status.err{color:#ffd1cc;font-weight:600}.status.ok{color:#d5f5e3}.status.warn{color:#fdebd0}
+#prog{display:none;width:220px}#prog .b{height:6px;background:rgba(255,255,255,.25);border-radius:3px;overflow:hidden}#progBar{height:100%;width:0;background:#f1c40f;transition:width .2s}#progTxt{font-size:11px;opacity:.8}
+main{flex:1;display:grid;grid-template-columns:minmax(420px,56%) 1fr;min-height:0}
+.left{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--pan)}
+.tabs{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line);background:#fafbfc}
+.tab{padding:8px 8px;font-size:12.5px;cursor:pointer;border-bottom:2px solid transparent;color:var(--mut);font-weight:500;user-select:none}.tab.on{color:var(--acc);border-bottom-color:var(--acc)}.tab:hover{color:var(--ink)}
+#panel{flex:1;overflow:auto;padding:10px 14px 30px}
+.right{display:grid;grid-template-rows:1fr minmax(180px,40%);min-height:0}
+.vwrap{position:relative;background:linear-gradient(#fdfdfe,#eef2f6);min-height:0}#view{width:100%;height:100%;display:block;cursor:grab}
+.vtools{position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;font-size:11.5px}.vtools button{padding:3px 8px;font-size:11.5px}.vtools label{background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 7px}
+.legend{position:absolute;right:8px;bottom:8px;opacity:.92;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:11px;line-height:1.7}
+.legend summary{cursor:pointer;font-weight:600;color:var(--acc)}.legend i{display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+#insp{overflow:auto;padding:8px 12px;background:var(--pan);border-top:1px solid var(--line)}#insp h4{margin:4px 0 2px;font-size:14px}
+h3{font-size:13.5px;margin:16px 0 6px;color:var(--acc)}h3:first-child{margin-top:4px}
+table.grid{border-collapse:collapse;width:100%;font-size:12px}table.grid th{position:sticky;top:-10px;background:#eef2f6;text-align:left;font-weight:600;padding:5px 6px;border-bottom:1px solid var(--line)}
+table.grid td{padding:4px 6px;border-bottom:1px solid #eef0f2;vertical-align:top}table.grid tr[data-id],table.grid tr[data-nsel]{cursor:pointer}table.grid tr:hover td{background:#f5f9fd}table.grid tr.sel td{background:#fff7d6}
+table.ref td.c{text-align:center;font-weight:600}td.bB{background:#ffc7ce}td.bP{background:#ffeb9c}
+table.kv{border-collapse:collapse;font-size:12px;width:100%}table.kv td{padding:3px 6px;border-bottom:1px solid #f0f1f3}table.kv td:first-child{color:var(--mut);width:46%}
+.o{display:inline-block;font-size:10px;padding:0 5px;border-radius:8px;border:1px solid rgba(0,0,0,.12);vertical-align:1px;cursor:help;white-space:nowrap}
+.o-STEP{background:#c6efce}.o-CALC{background:#ddebf7}.o-DEF{background:#ffeb9c}.o-USER{background:#e4dfec}.o-TODO{background:#ffc7ce;font-weight:600}.o-NA{background:#ededed;color:#888}.o-INFO{background:#eee}
+.todo{color:var(--bad);font-weight:600;font-size:11px}.bad{color:var(--bad);font-weight:600}.good{color:var(--ok)}.warn{color:var(--warn);font-weight:600}
+.sm{font-size:11px;color:var(--mut)}.hint{color:var(--mut);font-style:italic}
+.form{display:flex;flex-wrap:wrap;gap:8px 16px;margin:4px 0}.form label{display:flex;flex-direction:column;font-size:11.5px;color:var(--mut);gap:2px}.form label.chk{flex-direction:row;align-items:center;gap:5px;color:var(--ink);font-size:12.5px}.form label.wide{flex-basis:100%}
+input,select,textarea{font:inherit;font-size:12px;border:1px solid #c9d0d8;border-radius:4px;padding:3px 5px;background:#fff;color:var(--ink)}textarea{width:100%;font-family:ui-monospace,Consolas,monospace;font-size:11.5px}
+input:focus,select:focus,textarea:focus{outline:2px solid #bcd7f0;border-color:var(--acc2)}
+.bar{margin:8px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.kpis{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}.kpis div{background:#f2f5f8;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--mut);min-width:92px}.kpis b{display:block;font-size:18px;color:var(--ink)}.kpis .kbad b{color:var(--bad)}.kpis .kgood b{color:var(--ok)}
+ul.alerts{list-style:none;padding:0;margin:0}ul.alerts li{padding:4px 8px;border-left:3px solid #ccc;margin:3px 0;background:#fafbfc;font-size:12px}ul.alerts li b{margin-right:6px}
+.a-err{border-color:var(--bad)!important;background:#fdf0ef!important}.a-warn{border-color:#f0b429!important;background:#fffaf0!important}.a-info{border-color:#9bb8d3!important}
+.card{border:1px solid var(--line);border-radius:7px;margin:8px 0;padding:6px 10px;background:#fcfdfe}.card-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+ol.help,ul.help{padding-left:20px;margin:4px 0}ol.help li,ul.help li{margin:3px 0}
+details summary{cursor:pointer;color:var(--acc);margin:6px 0}
+@media (max-width:900px){main{grid-template-columns:1fr;grid-template-rows:auto 520px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>STEP → Données d'entrée Flowmaster<small>100 % local · aucun envoi réseau</small></h1>
+  <button id="btnOpen">Ouvrir un STEP…</button><input type="file" id="file" accept=".stp,.step,.p21,.STP,.STEP" hidden>
+  <div id="prog"><div class="b"><div id="progBar"></div></div><div id="progTxt"></div></div>
+  <div id="status" class="status">Ouvrez ou glissez-déposez un fichier STEP (AP203, AP214, AP242).</div>
+  <button id="btnExport" class="pri" disabled>Exporter l'Excel</button>
+</header>
+<main>
+  <section class="left">
+    <nav class="tabs">
+      <div class="tab on" data-t="set">Réglages &amp; synthèse</div><div class="tab" data-t="comp">Composants</div><div class="tab" data-t="nodes">Nœuds &amp; CL</div><div class="tab" data-t="eq">Équipements</div><div class="tab" data-t="data">Données de calcul</div><div class="tab" data-t="bodies">Corps CAO</div><div class="tab" data-t="ref">Référentiel</div><div class="tab" data-t="help">Aide &amp; limites</div>
+    </nav>
+    <div id="panel"></div>
+  </section>
+  <section class="right">
+    <div class="vwrap"><canvas id="view"></canvas>
+      <div class="vtools"><button data-view="iso">Iso</button><button data-view="top">Dessus</button><button data-view="front">Face</button><button data-view="side">Côté</button><button id="btnFit">Cadrer</button><label><input type="checkbox" id="chkLbl" checked> étiquettes</label><label><input type="checkbox" id="chkTodo" checked> à compléter</label></div>
+      <details class="legend"><summary>Légende</summary><div><i style="background:#2f7fc1"></i>Tube (pointillé : De seul)</div><div><i style="background:#e08a1e"></i>Coude</div><div><i style="background:#16a085"></i>Variation de section</div><div><i style="background:#8e44ad"></i>Té ◆</div><div><i style="background:#c0392b"></i>Équipement</div><div><i style="background:rgba(231,76,60,.4);height:8px"></i>Données bloquantes</div><div>□ extrémité libre (verte : CL saisie)</div><div class="sm">Glisser : rotation · Maj/droit : déplacer · Molette : zoom</div></details>
+    </div>
+    <div id="insp"></div>
+  </section>
+</main>
+<!-- ===== Moteur d'analyse STEP (également exécuté dans le Web Worker) ===== -->
+<script id="core-src">
+/*CORE*/
+</script>
+<!-- ===== Données de référence, export xlsx, application ===== -->
+<script>
+/*DATA*/
+/*XLSX*/
+/*APP*/
+</script>
+</body>
+</html>

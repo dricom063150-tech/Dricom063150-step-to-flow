@@ -1,0 +1,76 @@
+{
+ "ref1": {
+  "tubes": [
+   {
+    "Di": 52.48,
+    "De": 60.3,
+    "L_mm": 1000
+   }
+  ],
+  "noeuds": 2,
+  "extremites": 2
+ },
+ "ref2": {
+  "coudes": [
+   {
+    "R": 78.72,
+    "angle": 90,
+    "Di": 52.48
+   },
+   {
+    "R": 78.72,
+    "angle": 45,
+    "Di": 52.48
+   }
+  ],
+  "reduction": {
+   "D1": 52.48,
+   "D2": 26.64,
+   "L": 76,
+   "angle": 19.29609063219631
+  },
+  "te": {
+   "Di": 26.64,
+   "angle": 90
+  },
+  "longueurs_tubes_mm": {
+   "P1": 500,
+   "P2": 400,
+   "P3": 300,
+   "P4": 200,
+   "te_principal_amont": 38,
+   "te_principal_aval": 38,
+   "te_derive": 38,
+   "P5": 250,
+   "P6": 300
+  },
+  "extremites": 3
+ },
+ "ref3": {
+  "tubes": [
+   {
+    "Di": 68.9,
+    "De": 76.1,
+    "L": 850
+   },
+   {
+    "Di": 52.5,
+    "L": 300
+   },
+   {
+    "Di": 52.5,
+    "L": 300
+   }
+  ],
+  "equipements": {
+   "POMPE_CIRC_P1": {
+    "DN_asp": 68.9,
+    "DN_ref": 52.5
+   },
+   "VANNE_V1": {
+    "DN": 52.5
+   }
+  },
+  "extremites": 2
+ }
+}
